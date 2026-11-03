@@ -1,0 +1,15 @@
+{
+  "version": "2026-11-03",
+  "default": { "requires_approval": true, "risk": "high", "required_role": "approver", "rule": "default-deny-unknown-action" },
+  "rules": [
+    { "id": "refund-critical", "action": "issue_refund", "when": { "amount_gt": 500 }, "requires_approval": true, "risk": "critical", "required_role": "admin", "expires_hours": 24 },
+    { "id": "refund-standard", "action": "issue_refund", "when": {}, "requires_approval": true, "risk": "high", "required_role": "approver", "expires_hours": 48 },
+    { "id": "credit-adjustment", "action": "apply_account_credit", "when": {}, "requires_approval": true, "risk": "high", "required_role": "approver", "expires_hours": 48 },
+    { "id": "external-communication", "action": "send_customer_email", "when": {}, "requires_approval": true, "risk": "medium", "required_role": "approver", "expires_hours": 72 },
+    { "id": "account-modification", "action": "update_account", "when": {}, "requires_approval": true, "risk": "high", "required_role": "approver", "expires_hours": 48 },
+    { "id": "proposal-submission", "action": "submit_proposal", "when": {}, "requires_approval": true, "risk": "high", "required_role": "approver", "expires_hours": 72 },
+    { "id": "internal-ticket", "action": "create_jira_issue", "when": {}, "requires_approval": false, "risk": "low", "required_role": "operator" },
+    { "id": "internal-chat", "action": "post_slack_message", "when": {}, "requires_approval": false, "risk": "low", "required_role": "operator" },
+    { "id": "crm-note", "action": "add_crm_note", "when": {}, "requires_approval": false, "risk": "low", "required_role": "operator" }
+  ]
+}
