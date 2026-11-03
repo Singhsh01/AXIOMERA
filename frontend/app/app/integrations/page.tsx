@@ -23,7 +23,7 @@ export default function Integrations() {
           <Panel key={c.kind}>
             <div className="flex items-start justify-between gap-2">
               <div><h2 className="font-display text-lg font-semibold">{c.display_name}</h2><p className="text-xs text-ink-mute">{c.kind === "n8n" ? c.health?.url : `${c.simulator_records ?? 0} simulator records${c.last_check_at ? ` · checked ${ago(c.last_check_at)}` : ""}`}</p></div>
-              <div className="flex gap-1.5"><Status value={c.health?.status} /><Badge t={c.effective_mode === "live" ? "ok" : "cyan"}>{c.effective_mode}</Badge></div>
+              <div className="flex gap-1.5"><Status value={c.health?.status} /><Badge t={c.effective_mode === "live" ? "ok" : "signal"}>{c.effective_mode}</Badge></div>
             </div>
             {c.kind !== "n8n" && (
               <>
@@ -52,7 +52,7 @@ export default function Integrations() {
         <Panel className="mt-5">
           <h2 className="mb-3 font-display text-lg font-semibold">Simulator records: {sel}</h2>
           <div className="space-y-2">{records?.map((r) => (
-            <details key={r.id} className="rounded-lg border border-line p-3 text-sm"><summary className="cursor-pointer"><span className="font-mono text-cyan">{r.external_id}</span> {r.operation} <span className="text-ink-mute">· {ago(r.created_at)}</span></summary><JsonBlock value={r.payload} className="mt-2" /></details>
+            <details key={r.id} className="rounded-control border border-line p-3 text-sm"><summary className="cursor-pointer"><span className="font-mono text-signal">{r.external_id}</span> {r.operation} <span className="text-ink-mute">· {ago(r.created_at)}</span></summary><JsonBlock value={r.payload} className="mt-2" /></details>
           ))}{records && !records.length && <p className="text-sm text-ink-mute">No records yet.</p>}</div>
         </Panel>
       )}

@@ -36,7 +36,7 @@ function NewRequest({ open, onClose, onDone }: { open: boolean; onClose: () => v
       ) : (
         <form onSubmit={submit} className="space-y-4">
           <div className="flex flex-wrap gap-2">
-            {SAMPLES.map((s) => <button type="button" key={s.subject} onClick={() => setF(s)} className="focus-ring rounded-md border border-line px-2.5 py-1 text-xs text-ink-soft hover:bg-ink/[0.05]">{s.subject}</button>)}
+            {SAMPLES.map((s) => <button type="button" key={s.subject} onClick={() => setF(s)} className="focus-ring rounded-control border border-line px-2.5 py-1 text-xs text-ink-soft hover:bg-ink/[0.05]">{s.subject}</button>)}
           </div>
           <Field label="From"><input className={inputCls} type="email" required value={f.sender} onChange={(e) => setF({ ...f, sender: e.target.value })} /></Field>
           <Field label="Subject"><input className={inputCls} required value={f.subject} onChange={(e) => setF({ ...f, subject: e.target.value })} /></Field>
@@ -66,7 +66,7 @@ function CaseList() {
         <Tabs value={tab} onChange={setTab} items={[{ id: "open", label: "Open" }, { id: "incident", label: "Incidents" }, { id: "all", label: "All" }]} />
         <input aria-label="Search cases" placeholder="Search titles" className={`${inputCls} max-w-xs`} value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
-      <div className="glass overflow-x-auto">
+      <div className="plate overflow-x-auto">
         <table className="w-full min-w-[860px] text-sm">
           <thead className="text-left text-[13px] text-ink-mute">
             <tr className="border-b border-line">{["Case", "Customer", "Category", "Priority", "Status", "SLA", "Updated"].map((h) => <th key={h} className="px-4 py-3 font-medium">{h}</th>)}</tr>
@@ -75,7 +75,7 @@ function CaseList() {
             {data?.map((c) => (
               <tr key={c.id} className="border-b border-line/60 last:border-0 hover:bg-ink/[0.025]">
                 <td className="px-4 py-3">
-                  <Link href={`/app/cases/${c.id}`} className="focus-ring rounded font-medium hover:text-cyan">
+                  <Link href={`/app/cases/${c.id}`} className="focus-ring rounded font-medium hover:text-signal">
                     <span className="tabular text-ink-mute">#{c.number}</span> {c.title}
                   </Link>
                   <div className="mt-0.5 flex gap-1.5">{c.kind === "incident" && <Badge t="bad">incident</Badge>}{c.security_flags > 0 && <Badge t="warn">manipulation flagged</Badge>}{c.pending_actions > 0 && <Badge t="warn">{c.pending_actions} awaiting approval</Badge>}</div>

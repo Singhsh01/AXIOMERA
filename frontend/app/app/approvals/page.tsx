@@ -24,7 +24,7 @@ function Approvals() {
           {!rows && <Skeleton className="h-60" />}
           {rows && !rows.length && <Empty title={tab === "pending" ? "Nothing is waiting on you" : "No decisions yet"} body="New approvals appear when an agent proposes a consequential action." />}
           {rows?.map((a) => (
-            <button key={a.id} onClick={() => setSel(a.id)} className={cn("focus-ring glass block w-full p-4 text-left transition-colors", current?.id === a.id ? "border-violet/50 bg-violet/[0.06]" : "hover:bg-ink/[0.04]")}>
+            <button key={a.id} onClick={() => setSel(a.id)} className={cn("focus-ring plate block w-full p-4 text-left transition-colors", current?.id === a.id ? "border-accent/50 bg-accent/[0.06]" : "hover:bg-ink/[0.04]")}>
               <div className="flex items-start justify-between gap-3">
                 <p className="font-medium">{a.summary}</p>
                 <Badge t={a.risk_level === "critical" ? "bad" : a.risk_level === "high" ? "warn" : "info"}>{a.risk_level}</Badge>
@@ -36,7 +36,7 @@ function Approvals() {
         {current && (
           <Panel className="h-fit lg:sticky lg:top-20">
             <div className="flex flex-wrap items-center gap-2"><h2 className="font-display text-xl font-semibold">{human(current.action_type)}</h2><Status value={current.status} /></div>
-            {current.case && <Link href={`/app/cases/${current.case.id}`} className="mt-1 block text-sm text-cyan hover:underline">Case #{current.case.number}: {current.case.title}</Link>}
+            {current.case && <Link href={`/app/cases/${current.case.id}`} className="mt-1 block text-sm text-signal hover:underline">Case #{current.case.number}: {current.case.title}</Link>}
             {current.rationale && <p className="mt-4 text-[15px] leading-relaxed text-ink-soft">{current.rationale}</p>}
             <p className="mt-5 text-xs text-ink-mute">Exact parameters that will be executed</p>
             <JsonBlock value={current.scope} className="mt-1.5" />

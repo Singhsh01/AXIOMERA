@@ -28,27 +28,38 @@ export default function MissionControl() {
   return (
     <>
       <PageHeader title="Agent mission control" sub="Every agent run with its model, prompt version, tool calls, context sources, budget use and cost. Reasoning is stored as a short summary, never as private chain-of-thought." />
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {!ov && [0, 1, 2].map((i) => <Skeleton key={i} className="h-28" />)}
-        {ov?.agents.map((a: any) => {
-          const fails = (a.by_status.failed ?? 0) + (a.by_status.budget_exceeded ?? 0);
-          return (
-            <button key={a.agent} onClick={() => setAgent(agent === a.agent ? null : a.agent)}
-              className={cn("focus-ring glass p-4 text-left transition-colors", agent === a.agent ? "border-cyan/50 bg-cyan/[0.05]" : "hover:bg-ink/[0.04]")}>
-              <div className="flex items-center justify-between"><p className="font-medium">{a.agent}</p>{a.by_status.running ? <Badge t="info" dot>running</Badge> : null}</div>
-              <p className="mt-0.5 text-xs text-ink-mute">{ROLE[a.agent] ?? "Agent"}</p>
-              <div className="mt-3 flex gap-5 text-sm tabular">
-                <span><span className="text-ink-mute">runs</span> {a.runs}</span>
-                <span><span className="text-ink-mute">avg</span> {ms(a.avg_latency_ms)}</span>
-                <span><span className="text-ink-mute">cost</span> {usd(a.cost_usd)}</span>
-                {fails > 0 && <span className="text-bad">{fails} failed</span>}
-              </div>
-            </button>
-          );
-        })}
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[720px] text-left">
+          <thead><tr className="border-b border-ink/80">
+            {["Agent", "Role", "Runs", "Avg latency", "Cost", "Failures"].map((h, i) => <th key={h} className={cn("label pb-3 font-normal", i > 1 && "text-right")}>{h}</th>)}
+          </tr></thead>
+          <tbody>
+            {!ov && <tr><td colSpan={6}><Skeleton className="mt-3 h-40" /></td></tr>}
+            {ov?.agents.map((a: any) => {
+              const fails = (a.by_status.failed ?? 0) + (a.by_status.budget_exceeded ?? 0);
+              const on = agent === a.agent;
+              return (
+                <tr key={a.agent} onClick={() => setAgent(on ? null : a.agent)} aria-selected={on}
+                  className={cn("cursor-pointer border-b border-line transition-colors", on ? "bg-raised" : "hover:bg-raised/50")}>
+                  <td className="py-3.5 pr-4">
+                    <button className="focus-ring flex items-center gap-2 text-[14px] font-semibold" onClick={(e) => { e.stopPropagation(); setAgent(on ? null : a.agent); }}>
+                      <span className={cn("h-3 w-[3px]", on ? "bg-accent" : "bg-ink/20")} aria-hidden />{a.agent}
+                      {a.by_status.running ? <Badge t="info" dot>running</Badge> : null}
+                    </button>
+                  </td>
+                  <td className="py-3.5 pr-4 text-[13px] text-ink-mute">{ROLE[a.agent] ?? "Agent"}</td>
+                  <td className="py-3.5 text-right font-mono text-[13px] tabular">{a.runs}</td>
+                  <td className="py-3.5 text-right font-mono text-[13px] tabular">{ms(a.avg_latency_ms)}</td>
+                  <td className="py-3.5 text-right font-mono text-[13px] tabular">{usd(a.cost_usd)}</td>
+                  <td className={cn("py-3.5 text-right font-mono text-[13px] tabular", fails ? "text-bad" : "text-ink-faint")}>{fails || "—"}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
 
-      <div className="mt-6"><Tabs value={tab} onChange={setTab} items={[{ id: "runs", label: agent ? `Runs: ${agent}` : "Live runs" }, { id: "tools", label: "Tool registry", count: ov?.registry.length }]} /></div>
+      <div className="mt-14"><Tabs value={tab} onChange={setTab} items={[{ id: "runs", label: agent ? `Runs: ${agent}` : "Live runs" }, { id: "tools", label: "Tool registry", count: ov?.registry.length }]} /></div>
       {tab === "runs" && (
         <div className="mt-4 space-y-2.5">
           <AnimatePresence initial={false}>
@@ -70,7 +81,7 @@ export default function MissionControl() {
                 const calls = ov.tools.filter((x: any) => x.tool === t.name);
                 return (
                   <tr key={t.name} className="border-b border-line/60 last:border-0">
-                    <td className="px-4 py-3 font-mono text-[13px] text-cyan">{t.name}</td>
+                    <td className="px-4 py-3 font-mono text-[13px] text-signal">{t.name}</td>
                     <td className="px-4 py-3 text-ink-soft">{t.description}</td>
                     <td className="px-4 py-3"><Badge>{t.scope}</Badge></td>
                     <td className="px-4 py-3">{t.consequential ? <Badge t="warn">required, scope-bound</Badge> : <span className="text-ink-mute">not needed</span>}</td>

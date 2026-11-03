@@ -2,6 +2,7 @@
 import { CodeEditor } from "@/components/CodeEditor";
 import { useEffect, useState } from "react";
 import { can, useMe } from "@/components/me";
+import { useTheme } from "@/components/theme";
 import { Badge, Button, ErrorNote, PageHeader, Panel, PanelTitle, Skeleton } from "@/components/ui/primitives";
 import { put, useApi } from "@/lib/api";
 
@@ -9,6 +10,7 @@ import { put, useApi } from "@/lib/api";
 export default function Policies() {
   const { data, mutate } = useApi<any>("/policies/approvals");
   const me = useMe();
+  const theme = useTheme();
   const [text, setText] = useState("");
   const [err, setErr] = useState<unknown>(null);
   const [saved, setSaved] = useState(false);
@@ -27,8 +29,8 @@ export default function Policies() {
       <PageHeader title="Approval policies" sub="Which actions need a human, at what risk level, and which role may decide. The first matching rule wins; anything unmatched requires approval." />
       <div className="grid gap-5 xl:grid-cols-[1.5fr_1fr]">
         <Panel className="p-3">
-          <div className="overflow-hidden rounded-lg border border-line">
-            {data ? <CodeEditor height="560px" defaultLanguage="json" theme="light" value={text} onChange={(v) => { setText(v ?? ""); setSaved(false); }}
+          <div className="overflow-hidden border border-line">
+            {data ? <CodeEditor height="560px" defaultLanguage="json" theme={theme === "dark" ? "vs-dark" : "light"} value={text} onChange={(v) => { setText(v ?? ""); setSaved(false); }}
               options={{ readOnly: !admin, minimap: { enabled: false }, fontSize: 13, scrollBeyondLastLine: false, tabSize: 2 }} /> : <Skeleton className="h-[560px]" />}
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-3 px-1">

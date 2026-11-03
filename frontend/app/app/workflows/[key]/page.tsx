@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, use, useMemo, useState } from "react";
 import { can, useMe } from "@/components/me";
+import { useTheme } from "@/components/theme";
 import { Badge, Button, ErrorNote, PageHeader, Panel, PanelTitle, Skeleton, Status } from "@/components/ui/primitives";
 import { post, useApi } from "@/lib/api";
 import { ago, cn, dt, ms } from "@/lib/format";
@@ -13,24 +14,27 @@ import { ago, cn, dt, ms } from "@/lib/format";
 
 type NodeData = { label: string; type: string; state?: string; attempts?: number; retry?: any; selected?: boolean; error?: string };
 
-const TYPE_LABEL: Record<string, string> = { webhook: "Webhook", code: "Code", httpRequest: "HTTP → Orkestr API", if: "Branch", respondToWebhook: "Respond", wait: "Wait for human",
+const TYPE_LABEL: Record<string, string> = { webhook: "Webhook", code: "Code", httpRequest: "HTTP → Axiomera API", if: "Branch", respondToWebhook: "Respond", wait: "Wait for human",
   executeWorkflow: "Sub-workflow", executeWorkflowTrigger: "Called by workflow", scheduleTrigger: "Schedule", splitOut: "Split items", errorTrigger: "Error trigger", stopAndError: "Stop" };
+
+const STATE_BAR: Record<string, string> = { failed: "bg-bad", waiting: "bg-warn live-dot", succeeded: "bg-ok", running: "bg-info live-dot" };
 
 function FlowNode({ data }: NodeProps<Node<NodeData>>) {
   const s = data.state;
   return (
-    <div className={cn("w-[190px] rounded-xl border bg-midnight/95 px-3 py-2.5 shadow-lift transition-colors",
-      s === "failed" ? "border-bad/70" : s === "waiting" ? "border-warn/70" : s === "succeeded" ? "border-violet/70" : "border-line",
-      data.selected && "ring-2 ring-cyan/60")}>
-      <Handle type="target" position={Position.Left} className="!h-2 !w-2 !border-0 !bg-ink-faint" />
-      <p className="text-[11px] text-ink-mute">{TYPE_LABEL[data.type] ?? data.type}</p>
-      <p className="truncate text-[13px] font-medium text-ink">{data.label}</p>
-      <div className="mt-1.5 flex flex-wrap gap-1">
+    <div className={cn("relative w-[196px] border bg-surface py-2.5 pl-4 pr-3 transition-[border-color,box-shadow] duration-300 ease-arch",
+      data.selected ? "border-ink shadow-[4px_4px_0_0_rgb(var(--ink)/0.12)]" : s ? "border-ink/25" : "border-line",
+      !s && !data.selected && "opacity-80")}>
+      <span className={cn("absolute inset-y-0 left-0 w-[3px]", s ? STATE_BAR[s] ?? "bg-ink-faint" : "bg-transparent")} aria-hidden />
+      <Handle type="target" position={Position.Left} className="!h-1.5 !w-1.5 !rounded-none !border-0 !bg-ink/40" />
+      <p className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-ink-mute">{TYPE_LABEL[data.type] ?? data.type}</p>
+      <p className="mt-1 truncate text-[13px] font-semibold text-ink">{data.label}</p>
+      <div className="mt-2 flex flex-wrap gap-1">
         {s && <Status value={s} />}
-        {(data.attempts ?? 0) > 1 && <Badge t="cyan">attempt {data.attempts}</Badge>}
+        {(data.attempts ?? 0) > 1 && <Badge t="signal">attempt {data.attempts}</Badge>}
         {data.retry?.enabled && !s && <Badge>retry ×{data.retry.maxTries}</Badge>}
       </div>
-      <Handle type="source" position={Position.Right} className="!h-2 !w-2 !border-0 !bg-ink-faint" />
+      <Handle type="source" position={Position.Right} className="!h-1.5 !w-1.5 !rounded-none !border-0 !bg-ink/40" />
     </div>
   );
 }
@@ -71,6 +75,7 @@ function Studio({ wfKey }: { wfKey: string }) {
   const [runId, setRunId] = useState<string | null>(runParam);
   const [selNode, setSelNode] = useState<string | null>(null);
   const me = useMe();
+  const theme = useTheme();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<unknown>(null);
   const run = data?.runs.find((r: any) => r.id === runId) ?? data?.runs[0];
@@ -87,8 +92,8 @@ function Studio({ wfKey }: { wfKey: string }) {
     const es: Edge[] = data.edges.map((e: any) => {
       const lit = state[e.source]?.state === "succeeded" && state[e.target];
       return { id: e.id, source: e.source, target: e.target, animated: !!lit, label: data.nodes.find((n: any) => n.id === e.source)?.type === "if" ? (e.branch === 0 ? "true" : "false") : undefined,
-        labelStyle: { fill: "#596282", fontSize: 10 }, labelBgStyle: { fill: "#FFFFFF" },
-        style: { stroke: lit ? "#0E8FA3" : "rgba(40,52,110,0.28)", strokeWidth: lit ? 2 : 1.3 } };
+        labelStyle: { fill: "rgb(var(--ink-mute))", fontSize: 10, fontFamily: "IBM Plex Mono" }, labelBgStyle: { fill: "rgb(var(--page))" },
+        style: { stroke: lit ? "rgb(var(--accent))" : "rgb(var(--ink) / 0.22)", strokeWidth: lit ? 1.8 : 1.1 } };
     });
     return { nodes: ns, edges: es };
   }, [data, run, selNode]);
@@ -112,10 +117,10 @@ function Studio({ wfKey }: { wfKey: string }) {
         actions={(wfKey === "B" || wfKey === "D") && can(me, "workflow.trigger") && <Button variant="primary" loading={busy} onClick={triggerTest}>{wfKey === "B" ? "Send test incident" : "Run deadline scan now"}</Button>} />
       <ErrorNote error={err} />
       <div className="grid gap-5 xl:grid-cols-[1fr_340px]">
-        <div className="glass h-[620px] overflow-hidden">
+        <div className="plate h-[620px] overflow-hidden">
           <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView fitViewOptions={{ padding: 0.08 }} minZoom={0.2}
             onNodeClick={(_, n) => setSelNode(n.id)} nodesDraggable={false} nodesConnectable={false} proOptions={{ hideAttribution: true }}>
-            <Background color="rgba(40,52,110,0.14)" gap={28} />
+            <Background color="rgb(var(--ink) / 0.12)" gap={24} size={1} />
             <Controls showInteractive={false} />
           </ReactFlow>
         </div>
@@ -124,7 +129,7 @@ function Studio({ wfKey }: { wfKey: string }) {
           <ul className="space-y-1.5">
             {data.runs.map((r: any) => (
               <li key={r.id}>
-                <button onClick={() => setRunId(r.id)} className={cn("focus-ring w-full rounded-lg border px-3 py-2 text-left text-sm", run?.id === r.id ? "border-violet/50 bg-violet/10" : "border-line hover:bg-ink/[0.04]")}>
+                <button onClick={() => setRunId(r.id)} className={cn("focus-ring w-full rounded-control border px-3 py-2 text-left text-sm", run?.id === r.id ? "border-accent/50 bg-accent/10" : "border-line hover:bg-ink/[0.04]")}>
                   <div className="flex items-center justify-between gap-2"><span>{r.n8n_execution_id ? `n8n #${r.n8n_execution_id}` : r.trigger}</span><Status value={r.status} /></div>
                   <p className="mt-0.5 text-xs text-ink-mute">{ago(r.started_at)} · {r.step_count} steps · {ms(r.duration_ms)}{r.retries ? ` · ${r.retries} retried` : ""}</p>
                 </button>
@@ -137,21 +142,21 @@ function Studio({ wfKey }: { wfKey: string }) {
       <div className="mt-5 grid gap-5 lg:grid-cols-2">
         <Panel>
           <PanelTitle hint={selNode ? "As committed in n8n/workflows" : "Select a node in the graph"}>{selNode ?? "Node definition"}</PanelTitle>
-          {nodeDef ? <div className="overflow-hidden rounded-lg border border-line"><CodeEditor height="300px" defaultLanguage="json" theme="light" value={JSON.stringify(nodeDef, null, 2)}
+          {nodeDef ? <div className="overflow-hidden border border-line"><CodeEditor height="300px" defaultLanguage="json" theme={theme === "dark" ? "vs-dark" : "light"} value={JSON.stringify(nodeDef, null, 2)}
             options={{ readOnly: true, minimap: { enabled: false }, fontSize: 12, scrollBeyondLastLine: false, wordWrap: "on" }} /></div> : <p className="text-sm text-ink-mute">Nothing selected.</p>}
         </Panel>
         <Panel>
           <PanelTitle hint={run ? `Run started ${dt(run.started_at)}` : undefined}>Step results</PanelTitle>
           {(selNode ? nodeSteps : run?.steps ?? []).map((s: any) => (
-            <div key={s.id} className="mb-2 rounded-lg border border-line p-3 text-sm">
-              <div className="flex items-center justify-between"><span className="font-medium">{s.node}{s.attempt > 1 && <span className="text-cyan"> · attempt {s.attempt}</span>}</span><Status value={s.status} /></div>
+            <div key={s.id} className="mb-2 border border-line p-3 text-sm">
+              <div className="flex items-center justify-between"><span className="font-medium">{s.node}{s.attempt > 1 && <span className="text-signal"> · attempt {s.attempt}</span>}</span><Status value={s.status} /></div>
               {s.error && <p className="mt-1 text-bad">{s.error}</p>}
               {s.detail && Object.keys(s.detail).length > 0 && <p className="mt-1 break-all font-mono text-[11px] text-ink-mute">{JSON.stringify(s.detail)}</p>}
             </div>
           ))}
           {run?.error && <p className="text-sm text-bad">Run error: {run.error}</p>}
-          {run?.entity_id && run.entity_type === "case" && <Link href={`/app/cases/${run.entity_id}`} className="text-sm text-cyan hover:underline">Open the case this run handled</Link>}
-          {run?.entity_id && run.entity_type === "rfp" && <Link href={`/app/rfps/${run.entity_id}`} className="text-sm text-cyan hover:underline">Open the RFP this run processed</Link>}
+          {run?.entity_id && run.entity_type === "case" && <Link href={`/app/cases/${run.entity_id}`} className="text-sm text-signal hover:underline">Open the case this run handled</Link>}
+          {run?.entity_id && run.entity_type === "rfp" && <Link href={`/app/rfps/${run.entity_id}`} className="text-sm text-signal hover:underline">Open the RFP this run processed</Link>}
         </Panel>
       </div>
     </>

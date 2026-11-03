@@ -5,7 +5,7 @@ import { use, useState } from "react";
 import { AgentRunCard } from "@/components/AgentRunCard";
 import { can, useMe } from "@/components/me";
 import { ApprovalActions } from "@/components/ApprovalActions";
-import { Badge, Button, JsonBlock, Panel, PanelTitle, Priority, Skeleton, Status, Tabs } from "@/components/ui/primitives";
+import { Badge, Button, DetailHeader, JsonBlock, Panel, PanelTitle, Priority, Skeleton, Status, Tabs } from "@/components/ui/primitives";
 import { post, useApi } from "@/lib/api";
 import { ago, dt, human, ms, until } from "@/lib/format";
 
@@ -24,27 +24,20 @@ export default function CaseDetail({ params }: { params: Promise<{ id: string }>
 
   return (
     <>
-      <div className="mb-6">
-        <Link href="/app/cases" className="text-sm text-ink-mute hover:text-ink">Cases</Link>
-        <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="h-display text-[32px] font-semibold sm:text-[38px]"><span className="text-ink-faint">#{c.number}</span> {c.title}</h1>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Status value={c.status} /><Priority p={c.priority} /><Badge>{human(c.category)}</Badge>
-              {c.kind === "incident" && <Badge t="bad">incident</Badge>}
-              {c.owner_team && <Badge t="violet">team {c.owner_team}</Badge>}
-              {c.external_refs?.jira && <Badge t="cyan">{c.external_refs.jira}</Badge>}
-              <span className={`text-sm ${c.sla_breached ? "text-bad" : "text-ink-mute"}`}>SLA {["resolved", "closed"].includes(c.status) ? "met" : until(c.sla_due_at)}</span>
-            </div>
-          </div>
-          {c.status === "needs_review" && can(me, "case.write") && (
-            <Button variant="secondary" onClick={async () => { await post(`/cases/${id}/release-review`); mutate(); }}>Release for automation</Button>
-          )}
-        </div>
-      </div>
+      <DetailHeader crumb={`#${c.number}`} prefix={`#${c.number}`} title={c.title}
+        meta={<>
+          <Status value={c.status} /><Priority p={c.priority} /><Badge>{human(c.category)}</Badge>
+          {c.kind === "incident" && <Badge t="bad">incident</Badge>}
+          {c.owner_team && <Badge t="accent">team {c.owner_team}</Badge>}
+          {c.external_refs?.jira && <Badge t="signal">{c.external_refs.jira}</Badge>}
+          <span className={`ml-1 font-mono text-[11px] ${c.sla_breached ? "text-bad" : "text-ink-mute"}`}>SLA {["resolved", "closed"].includes(c.status) ? "met" : until(c.sla_due_at)}</span>
+        </>}
+        actions={c.status === "needs_review" && can(me, "case.write") && (
+          <Button variant="secondary" onClick={async () => { await post(`/cases/${id}/release-review`); mutate(); }}>Release for automation</Button>
+        )} />
 
       {c.security_flags?.length > 0 && (
-        <div role="alert" className="mb-5 flex gap-3 rounded-panel border border-warn/30 bg-warn/10 p-4 text-sm">
+        <div role="alert" className="mb-6 flex gap-3 border-l-[3px] border-warn bg-warn/[0.07] p-4 text-sm">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-warn" />
           <div><p className="font-medium text-warn">Automation paused: the message tries to instruct the system</p>
             <ul className="mt-1 space-y-0.5 text-ink-soft">{c.security_flags.map((f: any, i: number) => <li key={i}>{human(f.pattern)}: “{f.excerpt}”</li>)}</ul></div>
@@ -74,7 +67,7 @@ export default function CaseDetail({ params }: { params: Promise<{ id: string }>
               {c.draft_reply && (
                 <Panel>
                   <PanelTitle hint="Sent only after approval of the customer email action">Draft reply</PanelTitle>
-                  <p className="whitespace-pre-wrap rounded-lg border border-line bg-abyss/50 p-4 text-sm leading-relaxed text-ink-soft">{c.draft_reply}</p>
+                  <p className="whitespace-pre-wrap rounded-control border border-line bg-page/50 p-4 text-sm leading-relaxed text-ink-soft">{c.draft_reply}</p>
                 </Panel>
               )}
             </div>
@@ -93,7 +86,7 @@ export default function CaseDetail({ params }: { params: Promise<{ id: string }>
                 <PanelTitle hint="Approved policy passages retrieved by hybrid search">Evidence</PanelTitle>
                 <ul className="space-y-3">
                   {(c.research?.policy_evidence ?? []).map((e: any) => (
-                    <li key={e.chunk_id} className="rounded-lg border border-line p-3">
+                    <li key={e.chunk_id} className="rounded-control border border-line p-3">
                       <p className="text-sm font-medium">{e.document}{e.heading && <span className="text-ink-mute"> / {e.heading}</span>}</p>
                       <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-ink-mute">{e.excerpt}</p>
                     </li>
@@ -112,12 +105,12 @@ export default function CaseDetail({ params }: { params: Promise<{ id: string }>
               <Panel key={a.id} className="grid gap-4 lg:grid-cols-[1fr_1fr]">
                 <div>
                   <div className="flex flex-wrap items-center gap-2"><h3 className="font-display text-lg font-semibold">{human(a.action_type)}</h3><Status value={a.status} />
-                    {a.result?.mode && <Badge t={a.result.mode === "live" ? "ok" : "cyan"}>{a.result.mode}{a.result.external_id ? ` ${a.result.external_id}` : ""}</Badge>}</div>
+                    {a.result?.mode && <Badge t={a.result.mode === "live" ? "ok" : "signal"}>{a.result.mode}{a.result.external_id ? ` ${a.result.external_id}` : ""}</Badge>}</div>
                   <JsonBlock value={a.params} className="mt-3 max-h-48" />
                 </div>
                 <div className="space-y-3 text-sm">
                   {a.approval ? (
-                    <div className="rounded-lg border border-line p-3">
+                    <div className="rounded-control border border-line p-3">
                       <p>Policy <span className="font-medium">{a.approval.policy_rule}</span>, risk {a.approval.risk_level}, needs {a.approval.required_role}</p>
                       <p className="mt-1 text-ink-mute">{a.approval.decided_at ? `${human(a.approval.status)} ${ago(a.approval.decided_at)}${a.approval.decision_note ? `: “${a.approval.decision_note}”` : ""}` : `Requested ${ago(a.approval.created_at)}, expires ${until(a.approval.expires_at)}`}</p>
                       <p className="mt-1 font-mono text-[11px] text-ink-faint">scope {a.approval.scope_hash.slice(0, 16)}…</p>
@@ -125,7 +118,7 @@ export default function CaseDetail({ params }: { params: Promise<{ id: string }>
                     </div>
                   ) : <p className="text-ink-mute">No approval required by policy (internal, low risk).</p>}
                   {a.verification && (
-                    <div className="rounded-lg border border-line p-3">
+                    <div className="rounded-control border border-line p-3">
                       <p className="font-medium">{a.verification.verified ? "Verified by read-back" : "Verification failed"}</p>
                       <ul className="mt-1 space-y-0.5 text-ink-mute">{a.verification.checks.map((ch: any) => <li key={ch.check}>{ch.passed ? "✓" : "✗"} {ch.check}</li>)}</ul>
                     </div>
@@ -142,7 +135,7 @@ export default function CaseDetail({ params }: { params: Promise<{ id: string }>
             <ol className="relative space-y-4 border-l border-line pl-6">
               {timeline.map((t, i) => (
                 <li key={i} className="relative">
-                  <span className={`absolute -left-[29px] top-1.5 h-2.5 w-2.5 rounded-full ${t.status === "failed" ? "bg-bad" : t.kind === "n8n" ? "bg-cyan" : "bg-violet"}`} />
+                  <span className={`absolute -left-[29px] top-1.5 h-2.5 w-2.5 rounded-full ${t.status === "failed" ? "bg-bad" : t.kind === "n8n" ? "bg-signal" : "bg-accent"}`} />
                   <div className="flex flex-wrap items-baseline gap-x-3"><p className="text-sm font-medium">{t.title}</p><p className="text-xs text-ink-faint">{dt(t.at)} · {t.actor}</p></div>
                   {t.detail && <p className={`text-sm ${t.status === "failed" ? "text-bad" : "text-ink-mute"}`}>{t.detail}</p>}
                 </li>

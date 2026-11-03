@@ -34,7 +34,7 @@ function Analytics() {
             <tbody>{Object.entries(a.model_usage as Record<string, any>).map(([p, v]) => <tr key={p} className="border-t border-line"><td className="py-2"><Status value={p} /></td><td className="tabular">{v.runs}</td><td className="tabular">{v.tokens}</td><td className="tabular">{usd(v.cost_usd)}</td></tr>)}</tbody></table></Panel>
         <Panel><PanelTitle hint="Most recent run of each suite">Evaluations</PanelTitle>
           {a.evaluations.length ? a.evaluations.map((e: any) => (
-            <div key={e.suite} className="mb-3 rounded-lg border border-line p-3">
+            <div key={e.suite} className="mb-3 rounded-control border border-line p-3">
               <div className="flex items-center justify-between"><p className="font-medium">{e.suite}</p><span className="text-xs text-ink-mute">{ago(e.at)} {e.uses_fixtures && "· fixtures"}</span></div>
               <p className="mt-1 font-mono text-[12px] text-ink-soft">{Object.entries(e.metrics).filter(([, v]) => typeof v === "number").map(([k, v]) => `${k} ${v}`).join("  ")}</p>
             </div>
@@ -61,7 +61,7 @@ function Timeline() {
             <div key={r.id} className="grid grid-cols-[9rem_1fr] items-center gap-3 text-xs">
               <span className="truncate text-ink-mute">{r.workflow_key} {r.n8n_execution_id ? `#${r.n8n_execution_id}` : r.trigger}</span>
               <div className="relative h-5 rounded bg-ink/[0.03]">
-                <span title={`${r.status}, ${ms(r.duration_ms)}`} className={`absolute top-0.5 h-4 rounded ${r.status === "failed" ? "bg-bad/80" : r.status === "waiting" ? "bg-warn/70" : r.status === "running" ? "bg-electric/70" : "bg-violet/80"}`} style={{ left: `${left}%`, width: `${width}%` }} />
+                <span title={`${r.status}, ${ms(r.duration_ms)}`} className={`absolute top-0.5 h-4 rounded ${r.status === "failed" ? "bg-bad/80" : r.status === "waiting" ? "bg-warn/70" : r.status === "running" ? "bg-info/70" : "bg-accent/80"}`} style={{ left: `${left}%`, width: `${width}%` }} />
               </div>
             </div>
           );
@@ -83,9 +83,9 @@ function DeadLetters() {
       {data?.length === 0 && <Empty title="No dead letters" body="Failed executions land here with the node, error and payload needed to replay them." />}
       <div className="space-y-3">
         {data?.map((d) => (
-          <div key={d.id} className="rounded-lg border border-line p-4">
+          <div key={d.id} className="rounded-control border border-line p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="font-medium">{d.source} {d.workflow_key && <Badge t="cyan">workflow {d.workflow_key}</Badge>}</p>
+              <p className="font-medium">{d.source} {d.workflow_key && <Badge t="signal">workflow {d.workflow_key}</Badge>}</p>
               <span className="flex items-center gap-2 text-xs text-ink-mute">{ago(d.created_at)} {d.n8n_execution_id && `· n8n #${d.n8n_execution_id}`}<Status value={d.status === "open" ? "failed" : "succeeded"} /></span>
             </div>
             <p className="mt-2 text-sm text-bad">{d.error}</p>
@@ -106,7 +106,7 @@ function Audit() {
   return (
     <Panel>
       <PanelTitle hint="Append-only, SHA-256 chained per workspace" action={<Button size="sm" onClick={() => mutate()}>Verify chain</Button>}>Audit log</PanelTitle>
-      {v && <p className={`mb-4 rounded-lg border px-3 py-2 text-sm ${v.valid ? "border-ok/30 bg-ok/10 text-ok" : "border-bad/30 bg-bad/10 text-bad"}`}>
+      {v && <p className={`mb-4 rounded-control border px-3 py-2 text-sm ${v.valid ? "border-ok/30 bg-ok/10 text-ok" : "border-bad/30 bg-bad/10 text-bad"}`}>
         {v.valid ? `Chain intact across ${v.events} events. Head ${v.head.slice(0, 16)}…` : `Chain broken at sequence ${v.broken_at_seq}: a record was altered or removed.`}</p>}
       <div className="overflow-x-auto">
         <table className="w-full min-w-[760px] text-sm">

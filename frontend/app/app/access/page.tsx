@@ -95,7 +95,7 @@ export default function AccessLog() {
             {!org.data ? <Skeleton className="h-20" /> : org.data.locked_accounts.length === 0 ? <p className="text-sm text-ink-mute">No account is locked.</p> : (
               <ul className="space-y-3">
                 {org.data.locked_accounts.map((a: any) => (
-                  <li key={a.id} className="flex items-center justify-between gap-3 rounded-lg border border-line p-3">
+                  <li key={a.id} className="flex items-center justify-between gap-3 rounded-control border border-line p-3">
                     <div className="min-w-0"><p className="truncate text-sm text-ink">{a.name}</p><p className="truncate text-xs text-ink-mute">{a.email} · until {new Date(a.locked_until).toLocaleTimeString()}</p></div>
                     <Button size="sm" variant="secondary" onClick={() => unlock(a.id)}>Unlock</Button>
                   </li>

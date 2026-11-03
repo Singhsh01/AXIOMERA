@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, use, useEffect, useMemo, useState } from "react";
 import { RunStrip } from "@/components/RunStrip";
 import { can, useMe } from "@/components/me";
-import { Badge, Button, ErrorNote, inputCls, Panel, PanelTitle, Skeleton, Status, Tabs } from "@/components/ui/primitives";
+import { Badge, Button, DetailHeader, ErrorNote, Panel, PanelTitle, Skeleton, Status, Tabs, inputCls } from "@/components/ui/primitives";
 import { patch, post, useApi } from "@/lib/api";
 import { ago, cn, dt, human, until } from "@/lib/format";
 
@@ -29,11 +29,11 @@ function SourceViewer({ rfp, req }: { rfp: any; req: any | null }) {
         </div>
       </div>
       {isPdf ? (
-        <div className="relative overflow-hidden rounded-lg bg-white">
+        <div className="relative overflow-hidden rounded-[2px] bg-white shadow-lift">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={`/api/v1/rfps/${rfp.id}/documents/${doc.id}/pages/${page}.png`} alt={`Page ${page} of ${doc.filename}`} className="w-full" />
           {hl?.page === page && hl.rects.map((r: any, i: number) => (
-            <span key={i} className="absolute rounded-sm bg-[#6A5AE0]/25 ring-2 ring-[#6A5AE0]" style={{ left: `${r.x * 100 - 0.5}%`, top: `${r.y * 100 - 0.3}%`, width: `${r.w * 100 + 1}%`, height: `${r.h * 100 + 0.6}%` }} />
+            <span key={i} className="absolute bg-accent/20 ring-2 ring-accent" style={{ left: `${r.x * 100 - 0.5}%`, top: `${r.y * 100 - 0.3}%`, width: `${r.w * 100 + 1}%`, height: `${r.h * 100 + 0.6}%` }} />
           ))}
         </div>
       ) : <p className="p-4 text-sm text-ink-mute">DOCX files are shown as extracted text; page references are logical pages.</p>}
@@ -62,19 +62,19 @@ function Matrix({ rfp, onSelect, selected }: { rfp: any; onSelect: (r: any) => v
       <Panel className="p-0">
         <div className="flex flex-wrap gap-1.5 border-b border-line p-3">
           {["all", ...STATUSES, "technical", "commercial", "contractual", "submission"].map((f) => (
-            <button key={f} onClick={() => setFilter(f)} className={cn("focus-ring rounded-md px-2.5 py-1 text-xs", filter === f ? "bg-violet/20 text-ink" : "text-ink-mute hover:bg-ink/[0.05]")}>
+            <button key={f} onClick={() => setFilter(f)} className={cn("focus-ring rounded-control px-2.5 py-1 text-xs", filter === f ? "bg-accent/20 text-ink" : "text-ink-mute hover:bg-ink/[0.05]")}>
               {human(f)}{STATUSES.includes(f) && reqs ? ` ${reqs.filter((r) => (r.compliance?.status ?? "unverified") === f).length}` : ""}
             </button>
           ))}
         </div>
         <div className="max-h-[640px] overflow-auto">
           <table className="w-full min-w-[640px] text-sm">
-            <thead className="sticky top-0 bg-midnight text-left text-[12px] text-ink-mute"><tr>{["ID", "Requirement", "Type", "Src", "Status"].map((h) => <th key={h} className="px-3 py-2 font-medium">{h}</th>)}</tr></thead>
+            <thead className="sticky top-0 bg-surface text-left text-[12px] text-ink-mute"><tr>{["ID", "Requirement", "Type", "Src", "Status"].map((h) => <th key={h} className="px-3 py-2 font-medium">{h}</th>)}</tr></thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.id} onClick={() => onSelect(r)} className={cn("cursor-pointer border-t border-line/60", sel?.id === r.id ? "bg-violet/10" : "hover:bg-ink/[0.03]")}>
+                <tr key={r.id} onClick={() => onSelect(r)} className={cn("cursor-pointer border-t border-line/60", sel?.id === r.id ? "bg-accent/10" : "hover:bg-ink/[0.03]")}>
                   <td className="whitespace-nowrap px-3 py-2.5 font-mono text-xs text-ink-mute">{r.code}</td>
-                  <td className="px-3 py-2.5"><p className="line-clamp-2">{r.text}</p>{r.human_verified && <Badge t="violet" className="mt-1">corrected by a person</Badge>}</td>
+                  <td className="px-3 py-2.5"><p className="line-clamp-2">{r.text}</p>{r.human_verified && <Badge t="accent" className="mt-1">corrected by a person</Badge>}</td>
                   <td className="px-3 py-2.5 text-xs"><p className={r.obligation === "mandatory" ? "text-ink" : "text-ink-mute"}>{r.obligation}</p><p className="text-ink-faint">{r.category}</p></td>
                   <td className="px-3 py-2.5 tabular text-xs text-ink-mute">p.{r.page}</td>
                   <td className="px-3 py-2.5"><Status value={r.compliance?.status ?? "unverified"} /></td>
@@ -91,7 +91,7 @@ function Matrix({ rfp, onSelect, selected }: { rfp: any; onSelect: (r: any) => v
             <div className="flex items-center justify-between gap-2"><span className="font-mono text-sm text-ink-mute">{sel.code}</span><Status value={sel.compliance?.status} /></div>
             <p className="mt-2 text-[15px] leading-relaxed">{sel.text}</p>
             <p className="mt-2 text-xs text-ink-mute">Page {sel.page}{sel.section ? `, ${sel.section}` : ""} · chars {sel.char_start}–{sel.char_end} · confidence {sel.confidence} · {sel.extraction_method}</p>
-            <div className="mt-4 rounded-lg border border-line p-3 text-sm">
+            <div className="mt-4 rounded-control border border-line p-3 text-sm">
               <p className="text-ink-soft">{sel.compliance?.rationale}</p>
               {sel.compliance?.missing_info && <p className="mt-2 text-warn">Missing: {sel.compliance.missing_info}</p>}
               <p className="mt-2 text-xs text-ink-faint">Assessed by {sel.compliance?.assessed_by} · review {sel.compliance?.review_status}</p>
@@ -99,7 +99,7 @@ function Matrix({ rfp, onSelect, selected }: { rfp: any; onSelect: (r: any) => v
             <p className="mb-2 mt-4 text-xs text-ink-mute">Evidence ({sel.compliance?.evidence?.length ?? 0})</p>
             <ul className="space-y-2">
               {sel.compliance?.evidence?.map((e: any) => (
-                <li key={e.chunk_id} className="rounded-lg border border-line p-3">
+                <li key={e.chunk_id} className="rounded-control border border-line p-3">
                   <p className="text-sm font-medium">{e.document}{e.heading && <span className="text-ink-mute"> / {e.heading}</span>}</p>
                   <p className="mt-1 line-clamp-4 text-xs leading-relaxed text-ink-mute">{e.excerpt}</p>
                   <p className="mt-1.5 text-[11px] text-ink-faint">coverage {Math.round(e.coverage * 100)}% · rrf {e.scores?.rrf} · lexical {e.scores?.lexical ?? "–"} · semantic {e.scores?.semantic ?? "–"}</p>
@@ -156,7 +156,7 @@ function ProposalEditor({ rfp }: { rfp: any }) {
           <Panel key={s.key} id={`sec-${s.key}`}>
             <PanelTitle hint={s.edited_at ? `Edited ${ago(s.edited_at)}` : `Generated by ${p.generator.provider}/${p.generator.model}`}>{i + 1}. {s.title}</PanelTitle>
             {s.unsupported_claims?.length > 0 && (
-              <div className="mb-3 flex gap-2 rounded-lg border border-warn/30 bg-warn/10 p-3 text-sm">
+              <div className="mb-3 flex gap-2 rounded-control border border-warn/30 bg-warn/10 p-3 text-sm">
                 <AlertTriangle className="h-4 w-4 shrink-0 text-warn" />
                 <div><p className="text-warn">{s.unsupported_claims.length} claim(s) not supported by cited evidence{s.edited_at ? " (flagged in your edit)" : " were removed"}</p>
                   <ul className="mt-1 text-xs text-ink-soft">{s.unsupported_claims.map((u: any, j: number) => <li key={j}>{u.claims.join(", ")}: “{u.sentence.slice(0, 120)}”</li>)}</ul></div>
@@ -165,7 +165,7 @@ function ProposalEditor({ rfp }: { rfp: any }) {
             <textarea aria-label={`${s.title} content`} disabled={locked || !can(me, "rfp.edit")} className={`${inputCls} min-h-36 font-sans leading-relaxed`}
               value={drafts[s.key] ?? s.content} onChange={(e) => setDrafts({ ...drafts, [s.key]: e.target.value })} />
             <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-              <div className="flex flex-wrap gap-1.5">{s.citations?.filter((c: any) => c.ref).map((c: any) => <Badge key={c.ref + c.chunk_id} t="violet"><span title={c.excerpt}>[{c.ref}] {c.document}</span></Badge>)}</div>
+              <div className="flex flex-wrap gap-1.5">{s.citations?.filter((c: any) => c.ref).map((c: any) => <Badge key={c.ref + c.chunk_id} t="accent"><span title={c.excerpt}>[{c.ref}] {c.document}</span></Badge>)}</div>
               {drafts[s.key] !== undefined && drafts[s.key] !== s.content && (
                 <Button size="sm" variant="primary" loading={busy === s.key} onClick={() => act(s.key, async () => { await patch(`/proposals/${p.id}/sections/${s.key}`, { content: drafts[s.key] }); setDrafts({ ...drafts, [s.key]: undefined as any }); })}>Save section</Button>
               )}
@@ -220,7 +220,7 @@ function ProposalEditor({ rfp }: { rfp: any }) {
             ))}
           </div>
           <ul className="mt-3 space-y-1 text-xs text-ink-mute">
-            {p.exports.slice(0, 5).map((x: any) => <li key={x.id}><a className="hover:text-cyan" href={`/api/v1/exports/${x.id}/download`}>{x.format.toUpperCase()} {x.final ? "final" : "draft"}, {dt(x.created_at)}</a> <a className="text-ink-faint hover:text-cyan" href={`/api/v1/exports/${x.id}/manifest`} target="_blank">manifest</a></li>)}
+            {p.exports.slice(0, 5).map((x: any) => <li key={x.id}><a className="hover:text-signal" href={`/api/v1/exports/${x.id}/download`}>{x.format.toUpperCase()} {x.final ? "final" : "draft"}, {dt(x.created_at)}</a> <a className="text-ink-faint hover:text-signal" href={`/api/v1/exports/${x.id}/manifest`} target="_blank">manifest</a></li>)}
           </ul>
         </Panel>
         {rfp.proposals.length > 1 && (
@@ -246,32 +246,33 @@ function Workspace({ id }: { id: string }) {
   if (!rfp) return <Skeleton className="h-[600px]" />;
   return (
     <>
-      <Link href="/app/rfps" className="text-sm text-ink-mute hover:text-ink">Proposals</Link>
-      <div className="mb-5 mt-2 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="h-display text-[30px] font-semibold sm:text-[36px]">{rfp.title}</h1>
-          <p className="mt-2 text-sm text-ink-mute">{rfp.issuer}{rfp.reference && `, ref. ${rfp.reference}`} · {rfp.requirements} requirements · <Status value={rfp.status} /></p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {deadlines.map((d: any) => (
-            <div key={d.kind + d.at} className={cn("rounded-lg border px-3 py-1.5 text-sm", d.kind === "submission" ? "border-warn/40 bg-warn/10" : "border-line")}>
-              <p className="text-xs text-ink-mute">{human(d.kind)} · p.{d.page}</p><p className="tabular">{dt(d.at)} <span className="text-ink-mute">({until(d.at)})</span></p>
-            </div>
-          ))}
-        </div>
-      </div>
+      <DetailHeader crumb={rfp.reference || "Tender"} title={rfp.title} meta={<Status value={rfp.status} />} />
+      {/* Title block, as on a drawing sheet: who, what, and the dates that matter. */}
+      <dl className="mb-10 grid grid-cols-2 border-l border-t border-line md:grid-cols-4 xl:grid-cols-7">
+        {[["Issuer", rfp.issuer], ["Reference", rfp.reference || "—"], ["Requirements", rfp.requirements]].map(([k, v]) => (
+          <div key={k as string} className="border-b border-r border-line px-4 py-3"><dt className="label">{k}</dt><dd className="mt-1.5 truncate text-[14px] font-semibold">{v as any}</dd></div>
+        ))}
+        {deadlines.map((d: any) => (
+          <div key={d.kind + d.at} className={cn("relative border-b border-r border-line px-4 py-3", d.kind === "submission" && "bg-raised")}>
+            {d.kind === "submission" && <span className="absolute inset-x-0 top-0 h-[2px] bg-accent" aria-hidden />}
+            <dt className="label">{human(d.kind)} · p.{d.page}</dt>
+            <dd className="mt-1.5 text-[14px] font-semibold tabular">{dt(d.at)}</dd>
+            <dd className="font-mono text-[10.5px] text-ink-mute">{until(d.at)}</dd>
+          </div>
+        ))}
+      </dl>
       {rfp.security_flags?.length > 0 && (
-        <div role="alert" className="mb-5 flex gap-3 rounded-panel border border-warn/30 bg-warn/10 p-4 text-sm">
+        <div role="alert" className="mb-6 flex gap-3 border-l-[3px] border-warn bg-warn/[0.07] p-4 text-sm">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-warn" />
           <div><p className="font-medium text-warn">The document contains text addressed to automated reviewers. It was excluded from the requirements.</p>
             <ul className="mt-1 text-ink-soft">{rfp.security_flags.map((f: any, i: number) => <li key={i}>Page {f.page}: “{f.excerpt}”</li>)}</ul></div>
         </div>
       )}
       <Tabs value={tab} onChange={setTab} items={[{ id: "matrix", label: "Requirements & compliance" }, { id: "proposal", label: "Proposal", count: rfp.proposals.length }, { id: "pipeline", label: "Pipeline runs", count: rfp.workflow_runs.length }]} />
-      <div className="mt-5">
+      <div className="mt-8">
         {tab === "matrix" && (
-          <div className="grid gap-5 xl:grid-cols-[minmax(320px,0.8fr)_1.6fr]">
-            <div className="xl:sticky xl:top-20 xl:h-fit"><SourceViewer rfp={rfp} req={sel} /></div>
+          <div className="grid gap-8 xl:grid-cols-[minmax(340px,0.85fr)_1.6fr]">
+            <div className="xl:sticky xl:top-24 xl:h-fit"><SourceViewer rfp={rfp} req={sel} /></div>
             <Matrix rfp={rfp} onSelect={setSel} selected={sel} />
           </div>
         )}

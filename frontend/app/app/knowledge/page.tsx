@@ -47,7 +47,7 @@ export default function Knowledge() {
           </form>
           <ol className="mt-4 space-y-2.5">
             {hits?.map((h, i) => (
-              <li key={h.chunk_id} className="rounded-lg border border-line p-3">
+              <li key={h.chunk_id} className="rounded-control border border-line p-3">
                 <div className="flex items-center justify-between gap-2"><p className="text-sm font-medium">{i + 1}. {h.document_title}{h.heading && <span className="text-ink-mute"> / {h.heading}</span>}</p><Badge>{human(h.kind)}</Badge></div>
                 <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-ink-mute">{h.text}</p>
                 <div className="mt-2 grid grid-cols-3 gap-2 text-[11px] tabular text-ink-faint">

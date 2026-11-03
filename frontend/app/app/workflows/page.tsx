@@ -8,24 +8,23 @@ export default function Workflows() {
   const { data } = useApi<any>("/workflows", { live: 10000 });
   return (
     <>
-      <PageHeader title="Workflow studio" sub="The n8n workflows in this repository, rendered from their version-controlled JSON and overlaid with the executions they reported. Editing happens in n8n; Orkestr shows what ran."
+      <PageHeader title="Workflow studio" sub="The n8n workflows in this repository, drawn from their version-controlled JSON and overlaid with the executions they reported. Editing happens in n8n; this view shows what actually ran."
         actions={data && <Badge t={data.n8n.status === "healthy" ? "ok" : "bad"} dot={data.n8n.status === "healthy"}>n8n {data.n8n.status}</Badge>} />
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {!data && [0, 1, 2].map((i) => <Skeleton key={i} className="h-44" />)}
+      <div className="grid border-l border-t border-line md:grid-cols-2 xl:grid-cols-3">
+        {!data && [0, 1, 2].map((i) => <Skeleton key={i} className="h-56 border-b border-r border-line" />)}
         {data?.workflows.map((w: any) => {
           const total = Object.values(w.stats as Record<string, number>).reduce((a, b) => a + b, 0);
           return (
-            <Link key={w.key} href={`/app/workflows/${w.key}`} className="focus-ring glass group block p-5 transition-colors hover:bg-ink/[0.05]">
-              <div className="flex items-start gap-4">
-                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-line bg-midnight font-display text-xl font-semibold text-cyan">{w.key}</span>
-                <div className="min-w-0">
-                  <h2 className="font-display text-lg font-semibold">{w.name}</h2>
-                  <p className="text-xs text-ink-mute">{w.nodes} nodes · {w.triggers.join(", ") || "sub-workflow"} · n8n id {w.n8n_id}</p>
-                </div>
+            <Link key={w.key} href={`/app/workflows/${w.key}`} className="focus-ring group relative flex min-h-[240px] flex-col border-b border-r border-line bg-surface/40 p-7 transition-colors duration-300 hover:bg-surface">
+              <div className="flex items-start justify-between">
+                <span className="font-display text-[72px] font-bold leading-[0.8] tracking-[-0.06em] text-ink/15 transition-colors duration-300 group-hover:text-accent">{w.key}</span>
+                {w.last_run ? <Status value={w.last_run.status} /> : <Badge>never run</Badge>}
               </div>
-              <div className="mt-5 flex items-center justify-between text-sm">
-                <span className="text-ink-mute">{total} runs · {w.stats.failed ?? 0} failed · {w.stats.waiting ?? 0} waiting</span>
-                {w.last_run ? <span className="flex items-center gap-2 text-xs text-ink-mute">{ago(w.last_run.started_at)}<Status value={w.last_run.status} /></span> : <span className="text-xs text-ink-faint">never run</span>}
+              <h2 className="mt-auto pt-8 font-display text-[20px] font-bold tracking-[-0.02em]">{w.name}</h2>
+              <p className="mt-1 font-mono text-[10.5px] text-ink-mute">{w.nodes} nodes · {w.triggers.join(", ") || "sub-workflow"} · {w.n8n_id}</p>
+              <div className="mt-5 flex items-center justify-between border-t border-line pt-4 text-[12.5px] text-ink-mute">
+                <span><span className="font-semibold text-ink tabular">{total}</span> runs · {w.stats.failed ?? 0} failed · {w.stats.waiting ?? 0} waiting</span>
+                <span className="flex items-center gap-2">{w.last_run && ago(w.last_run.started_at)}<span aria-hidden className="transition-transform duration-300 ease-arch group-hover:translate-x-1">→</span></span>
               </div>
             </Link>
           );
