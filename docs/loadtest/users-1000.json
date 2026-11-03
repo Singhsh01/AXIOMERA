@@ -1,0 +1,25 @@
+{
+  "users": 1000,
+  "client_processes": 2,
+  "duration_s": 52.3,
+  "requests": 7691,
+  "throughput_rps": 147.1,
+  "success_rate": 99.92,
+  "status_codes": {
+    "200": 7685,
+    "RemoteProtocolError": 5,
+    "ReadError": 1
+  },
+  "p50_ms": 2776.4,
+  "p95_ms": 8257.2,
+  "p99_ms": 10576.1,
+  "per_endpoint_p95_ms": {
+    "/api/v1/analytics/overview": 8530.1,
+    "/api/v1/approvals": 8338.1,
+    "/api/v1/cases": 7833.3,
+    "/api/v1/dashboard/summary": 8292.3,
+    "/api/v1/notifications": 8448.9,
+    "/api/v1/workflows": 8025.3
+  },
+  "mean_ms": 3329.5
+}
