@@ -1,13 +1,31 @@
-export function Logo({ className = "" }: { className?: string }) {
+import { BRAND } from "@/lib/brand";
+
+/**
+ * The Axiomera mark: a portal (two columns under an overhanging lintel) bisected by a single axis,
+ * with a square node where decisions are taken. Drawn with currentColor plus the accent token, so it
+ * works on light and dark surfaces and down to 16 px.
+ */
+export function Mark({ className = "h-7 w-7", title }: { className?: string; title?: string }) {
   return (
-    <span className={`inline-flex items-center gap-2 ${className}`}>
-      <svg viewBox="0 0 32 32" className="h-7 w-7" aria-hidden>
-        <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#6A5AE0" /><stop offset="1" stopColor="#0E8FA3" /></linearGradient></defs>
-        <rect width="32" height="32" rx="8" fill="#FFFFFF" stroke="rgba(40,52,110,.18)" />
-        <path d="M8 22 L16 10 L24 22" fill="none" stroke="url(#lg)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx="8" cy="22" r="2.6" fill="#6A5AE0" /><circle cx="16" cy="10" r="2.6" fill="#2F6BEB" /><circle cx="24" cy="22" r="2.6" fill="#0E8FA3" />
-      </svg>
-      <span className="font-display text-[19px] font-semibold tracking-[-0.03em]">Orkestr</span>
+    <svg viewBox="0 0 32 32" className={className} role={title ? "img" : undefined} aria-hidden={title ? undefined : true} aria-label={title}>
+      <path d="M4 7.5h24" stroke="currentColor" strokeWidth="2.6" strokeLinecap="square" />
+      <path d="M8.5 9v16.5M23.5 9v16.5" stroke="currentColor" strokeWidth="2.6" strokeLinecap="square" />
+      <path d="M16 9v16.5" stroke="currentColor" strokeWidth="1" />
+      <rect x="13" y="14" width="6" height="6" style={{ fill: "rgb(var(--accent))" }} />
+      <path d="M3 27.5h26" stroke="currentColor" strokeWidth="1" />
+    </svg>
+  );
+}
+
+export function Wordmark({ className = "" }: { className?: string }) {
+  return <span className={`font-display text-[15px] font-bold uppercase tracking-wordmark ${className}`}>{BRAND.name}</span>;
+}
+
+export function Logo({ className = "", compact }: { className?: string; compact?: boolean }) {
+  return (
+    <span className={`inline-flex items-center gap-2.5 text-ink ${className}`}>
+      <Mark title={compact ? BRAND.name : undefined} />
+      {!compact && <Wordmark />}
     </span>
   );
 }
