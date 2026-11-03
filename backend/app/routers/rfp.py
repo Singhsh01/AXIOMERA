@@ -131,7 +131,8 @@ def list_rfps(p: Principal = Depends(require("read")), db: Session = Depends(get
 def deadlines(horizon_hours: int = Query(72, le=24 * 60), p: Principal = Depends(require("read")), wf: WfCtx = Depends(wf_ctx), db: Session = Depends(get_db)):
     with workflows.StepTimer(db, p, wf.workflow, wf.node) as t:
         items = svc.at_risk(db, p.workspace_id, horizon_hours)
-        t.detail = {"at_risk": len(items)}
+        swept = workflows.sweep_stale_runs(db, p.workspace_id)  # Workflow D runs hourly: a good place for housekeeping
+        t.detail = {"at_risk": len(items), "abandoned_runs_closed": swept}
     db.commit()
     return {"items": items, "count": len(items), "checked_at": utcnow().isoformat()}
 

@@ -168,3 +168,30 @@ def test_audit_chain_detects_tampering(db, workspace_id):
 def test_approval_model_has_scope_hash(db, workspace_id):
     a = db.query(Approval).first()
     assert a is None or len(a.scope_hash) == 64
+
+
+def test_stale_runs_are_closed_but_waiting_runs_are_kept(db):
+    from datetime import timedelta
+
+    from app.db import new_id, utcnow
+    from app.models import AgentRun, Workspace, WorkflowRun, WorkflowStep
+    from app.platform.workflows import sweep_stale_runs
+
+    ws = db.query(Workspace).first()
+    old = utcnow() - timedelta(hours=5)
+
+    def mk(status):
+        return WorkflowRun(id=new_id(), workspace_id=ws.id, workflow_key="A", status=status, correlation_id=new_id(), started_at=old)
+
+    stuck, waiting, fresh = mk("running"), mk("waiting"), WorkflowRun(id=new_id(), workspace_id=ws.id, workflow_key="A", status="running", correlation_id=new_id())
+    agent = AgentRun(id=new_id(), workspace_id=ws.id, agent="triage-agent", task="t", provider="fixture", model="m", prompt_version="v", status="running", started_at=old)
+    db.add_all([stuck, waiting, fresh, agent])
+    db.flush()
+    db.add(WorkflowStep(id=new_id(), run_id=stuck.id, node="Classify", status="succeeded", started_at=old))
+    db.flush()
+    db.refresh(stuck)
+    out = sweep_stale_runs(db, ws.id)
+    assert out["workflow_runs"] >= 1 and out["agent_runs"] >= 1
+    assert stuck.status == "failed" and "abandoned" in stuck.error
+    assert waiting.status == "waiting" and fresh.status == "running" and agent.status == "failed"
+    db.rollback()

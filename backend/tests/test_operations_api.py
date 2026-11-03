@@ -23,6 +23,7 @@ def _stage(client, svc_h, case_id, stage):
 
 
 def test_requires_auth(client):
+    client.cookies.clear()  # earlier logins in the session leave a cookie on the shared client
     assert client.get("/api/v1/cases").status_code == 401
     assert client.get("/api/v1/cases", headers={"X-Orkestr-Service-Token": "wrong"}).status_code == 401
 

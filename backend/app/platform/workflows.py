@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import logging
 import time
+from datetime import timedelta
 from functools import lru_cache
 from typing import Any
 
@@ -23,7 +24,7 @@ from app.config import get_settings
 from app.core.observability import WORKFLOW_STEPS
 from app.core.security import sign_payload
 from app.db import new_id, utcnow
-from app.models import WorkflowRun, WorkflowStep
+from app.models import AgentRun, WorkflowRun, WorkflowStep
 
 log = logging.getLogger(__name__)
 
@@ -207,3 +208,30 @@ def n8n_executions(limit: int = 20) -> list[dict[str, Any]] | None:
     except httpx.HTTPError as exc:
         log.warning("n8n executions fetch failed: %s", exc)
         return None
+
+
+STALE_WORKFLOW_RUN = timedelta(hours=2)   # a "running" n8n execution reports a step at least every few seconds
+STALE_AGENT_RUN = timedelta(minutes=30)   # agent runs are bounded by their own time budget (well under this)
+
+
+def sweep_stale_runs(db: Session, workspace_id: str | None = None) -> dict[str, int]:
+    """Closes runs whose process died without reporting an outcome (a crashed worker, a killed n8n).
+
+    Without this they would show as "running" forever and skew success rates. Runs paused on an
+    approval have status "waiting" and are deliberately left alone: those can legitimately wait days.
+    """
+    now = utcnow()
+    wq = select(WorkflowRun).where(WorkflowRun.status == "running", WorkflowRun.started_at < now - STALE_WORKFLOW_RUN)
+    aq = select(AgentRun).where(AgentRun.status == "running", AgentRun.started_at < now - STALE_AGENT_RUN)
+    if workspace_id:
+        wq, aq = wq.where(WorkflowRun.workspace_id == workspace_id), aq.where(AgentRun.workspace_id == workspace_id)
+    w = a = 0
+    for r in db.scalars(wq):
+        last = max((s.started_at for s in r.steps), default=r.started_at)
+        if last < now - STALE_WORKFLOW_RUN:
+            r.status, r.finished_at, w = "failed", now, w + 1
+            r.error = (r.error + "\n" if r.error else "") + f"abandoned: no step reported since {last.isoformat()}"
+    for r in db.scalars(aq):
+        r.status, a = "failed", a + 1
+        r.error = (r.error + "\n" if r.error else "") + "abandoned: no outcome recorded within 30 minutes"
+    return {"workflow_runs": w, "agent_runs": a}
