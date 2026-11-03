@@ -12,9 +12,9 @@
     "predev": "node scripts/copy-monaco.mjs"
   },
   "dependencies": {
-    "@fontsource-variable/bricolage-grotesque": "5.1.1",
+    "@fontsource-variable/manrope": "5.2.8",
     "@fontsource/ibm-plex-mono": "5.1.1",
-    "@fontsource/ibm-plex-sans": "5.1.1",
+    "@fontsource/instrument-serif": "5.2.8",
     "@monaco-editor/react": "4.7.0",
     "@xyflow/react": "12.6.0",
     "class-variance-authority": "0.7.1",

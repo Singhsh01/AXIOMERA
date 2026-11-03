@@ -2,78 +2,134 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Light theme. The variable names match the Tailwind tokens (abyss = page, midnight = panel). */
-:root {
-  --abyss: #f5f6fb;
-  --midnight: #ffffff;
-  --ink: #141a33;
-  --violet: #6a5ae0;
-  --electric: #2f6beb;
-  --cyan: #0e8fa3;
-  --line: rgba(40, 52, 110, 0.12);
+/* ------------------------------------------------------------------ tokens
+   Channels only ("R G B") so Tailwind alpha modifiers work: bg-accent/10.
+   Light = "Travertine": warm ivory and stone, rich black type, bronze accent.
+   Dark  = the original Orkestr night palette, preserved. */
+:root,
+:root[data-theme="light"] {
+  --page: 244 240 232;        /* #F4F0E8 ivory */
+  --surface: 251 249 244;     /* #FBF9F4 */
+  --raised: 236 230 219;      /* #ECE6DB stone */
+  --ink: 24 22 19;            /* #181613 rich black */
+  --ink-soft: 58 53 47;       /* #3A352F charcoal */
+  --ink-mute: 98 91 82;       /* #625B52 graphite, 5.9:1 on page */
+  --ink-faint: 108 100 90;    /* #6C645A, 5.0:1 on page */
+  --accent: 130 86 46;        /* #82562E bronze, 5.6:1 on page */
+  --accent-deep: 107 69 35;   /* #6B4523 */
+  --signal: 162 78 46;        /* #A24E2E terracotta */
+  --info: 61 90 128;          /* #3D5A80 slate */
+  --ok: 52 104 68;            /* #346844 sage */
+  --warn: 134 86 16;          /* #865610 ochre */
+  --bad: 165 57 45;           /* #A5392D brick */
+  --primary: 24 22 19;
+  --on-primary: 251 249 244;
+  --inverse: 30 27 23;        /* charcoal band */
+  --on-inverse: 244 240 232;
+  --line: 24 22 19;
+  --line-a: 0.13;
+  --radius-panel: 2px;
+  --radius-control: 2px;
+  --shadow-plate: none;
+  --shadow-lift: 0 30px 60px -30px rgb(24 22 19 / 0.25);
+  --chart-1: #B8622E; --chart-2: #2A78D6; --chart-3: #1A9E70; --chart-4: #6250D6;
+  --grid-line: rgb(24 22 19 / 0.045);
+  --selection: rgb(140 94 52 / 0.22);
   color-scheme: light;
 }
 
-html, body { background: var(--abyss); color: var(--ink); }
-body {
-  font-family: "IBM Plex Sans", ui-sans-serif, system-ui;
-  font-feature-settings: "ss01", "ss02";
-  -webkit-font-smoothing: antialiased;
+:root[data-theme="dark"] {
+  --page: 7 10 20;
+  --surface: 14 20 38;
+  --raised: 19 27 51;
+  --ink: 238 241 255;
+  --ink-soft: 184 191 219;
+  --ink-mute: 140 148 181;
+  --ink-faint: 124 132 170;
+  --accent: 139 124 255;
+  --accent-deep: 91 75 214;
+  --signal: 56 225 240;
+  --info: 110 160 255;
+  --ok: 52 211 153;
+  --warn: 251 191 36;
+  --bad: 251 113 133;
+  --primary: 98 82 224;
+  --on-primary: 255 255 255;
+  --inverse: 21 30 58;
+  --on-inverse: 238 241 255;
+  --line: 139 148 255;
+  --line-a: 0.16;
+  --radius-panel: 2px;
+  --radius-control: 2px;
+  --shadow-plate: none;
+  --shadow-lift: 0 24px 60px -24px rgb(0 0 0 / 0.7);
+  --chart-1: #8B7CFF; --chart-2: #1FA3B5; --chart-3: #3D7BFF; --chart-4: #D26A92;
+  --grid-line: rgb(139 148 255 / 0.05);
+  --selection: rgb(139 124 255 / 0.35);
+  color-scheme: dark;
 }
 
-/* Ambient field: soft pastel light sources and a faint grid, fixed behind every page. */
-.ambient {
-  background:
-    radial-gradient(900px 520px at 12% -10%, rgba(106, 90, 224, 0.10), transparent 60%),
-    radial-gradient(800px 500px at 100% 0%, rgba(47, 107, 235, 0.08), transparent 60%),
-    radial-gradient(700px 600px at 70% 110%, rgba(14, 143, 163, 0.06), transparent 60%),
-    var(--abyss);
+html, body { background: rgb(var(--page)); color: rgb(var(--ink)); }
+body {
+  font-family: "Manrope Variable", ui-sans-serif, system-ui;
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
 }
+/* Theme switches cross-fade colours only (no layout properties), so nothing shifts. */
+html.theme-fade *, html.theme-fade *::before, html.theme-fade *::after {
+  transition: background-color 280ms ease, border-color 280ms ease, color 280ms ease, fill 280ms ease, stroke 280ms ease !important;
+}
+
+/* Faint drafting grid used behind editorial sections. */
 .gridlines {
   background-image:
-    linear-gradient(rgba(40, 52, 110, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(40, 52, 110, 0.045) 1px, transparent 1px);
-  background-size: 56px 56px;
-  mask-image: radial-gradient(ellipse at 50% 0%, black 30%, transparent 75%);
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 64px 64px;
 }
 
 @layer components {
-  .glass {
-    @apply rounded-panel border border-line;
-    background: rgba(255, 255, 255, 0.82);
-    box-shadow: 0 1px 2px rgba(20, 26, 51, 0.04), 0 8px 24px -16px rgba(20, 26, 51, 0.14);
-    backdrop-filter: blur(14px) saturate(1.2);
-  }
-  .glass-strong {
-    @apply rounded-panel border border-line shadow-lift;
-    background: rgba(255, 255, 255, 0.97);
-    backdrop-filter: blur(18px);
-  }
-  .focus-ring { @apply outline-none focus-visible:ring-2 focus-visible:ring-violet/60 focus-visible:ring-offset-2 focus-visible:ring-offset-abyss; }
+  /* A flat sheet: hairline border, no glass, no glow. */
+  .plate { @apply rounded-panel border border-line bg-surface shadow-plate; }
+  .plate-raised { @apply rounded-panel border border-line bg-surface shadow-lift; }
+  /* Architectural annotation label: mono, tracked capitals. */
+  .label { @apply font-mono text-[11px] uppercase tracking-label text-ink-mute; }
+  .focus-ring { @apply outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-page; }
   .tabular { font-variant-numeric: tabular-nums; }
-  .h-display { @apply font-display tracking-[-0.035em] leading-[0.95]; }
+  .h-display { @apply font-display font-bold tracking-[-0.035em] leading-[0.98]; }
+  .rule { @apply h-px w-full bg-line; }
+  /* Short heavy bar that marks the start of a section. */
+  .marker { @apply block h-[3px] w-10 bg-ink; }
 }
 
-/* Signal moving along an edge (used by hero and workflow studio). */
+/* ------------------------------------------------------------------ motion */
 @keyframes dash { to { stroke-dashoffset: -240; } }
 .signal { stroke-dasharray: 6 234; animation: dash 2.4s linear infinite; }
-@keyframes pulse-soft { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+@keyframes pulse-soft { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
 .live-dot { animation: pulse-soft 1.6s ease-in-out infinite; }
 @keyframes shimmer { 100% { transform: translateX(100%); } }
-.skeleton { position: relative; overflow: hidden; background: rgba(40, 52, 110, 0.06); border-radius: 8px; }
+.skeleton { position: relative; overflow: hidden; background: rgb(var(--raised) / 0.7); border-radius: 2px; }
 .skeleton::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent); animation: shimmer 1.4s infinite; }
+  background: linear-gradient(90deg, transparent, rgb(var(--surface) / 0.7), transparent); animation: shimmer 1.4s infinite; }
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.page-enter { animation: rise 520ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes scroll-cue { 0% { transform: scaleY(0); transform-origin: top; } 45% { transform: scaleY(1); transform-origin: top; }
+  55% { transform: scaleY(1); transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
+.scroll-cue { animation: scroll-cue 2.2s cubic-bezier(0.65, 0, 0.35, 1) infinite; }
 
 @media (prefers-reduced-motion: reduce) {
-  .signal, .live-dot, .skeleton::after { animation: none !important; }
+  .signal, .live-dot, .skeleton::after, .scroll-cue, .page-enter { animation: none !important; }
+  html.theme-fade * { transition: none !important; }
   * { scroll-behavior: auto !important; }
 }
 
-::selection { background: rgba(106, 90, 224, 0.2); }
+::selection { background: var(--selection); }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-thumb { background: rgba(40, 52, 110, 0.18); border-radius: 10px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb { background: rgb(var(--line) / calc(var(--line-a) * 1.4)); border-radius: 10px; border: 2px solid transparent; background-clip: padding-box; }
 
-/* React Flow theming */
+/* ------------------------------------------------------------------ React Flow */
 .react-flow__attribution { display: none; }
-.react-flow__edge-path { stroke: rgba(40, 52, 110, 0.3); }
-.react-flow__controls button { background: #ffffff; border-color: var(--line); fill: #3c4466; }
+.react-flow__edge-path { stroke: rgb(var(--ink) / 0.28); }
+.react-flow__controls { box-shadow: none !important; border: 1px solid rgb(var(--line) / var(--line-a)); }
+.react-flow__controls button { background: rgb(var(--surface)); border-color: rgb(var(--line) / var(--line-a)); fill: rgb(var(--ink-soft)); }
+.react-flow__controls button:hover { background: rgb(var(--raised)); }
