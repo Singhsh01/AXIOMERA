@@ -9,6 +9,12 @@ Orkestr combines two business engines on one control plane:
 
 n8n owns *sequencing* (webhooks, retries, waits, schedules, error workflows). The FastAPI service owns *business state*, so a replayed webhook or retried node can never create a second case or a second refund.
 
+### Business use case in 15 seconds
+
+<a href="docs/media/orkestr-use-case.mp4"><img src="docs/media/orkestr-use-case.webp" alt="A customer's €149 refund request flows through ORKESTR: the email becomes a case via an n8n webhook, AI agents classify it and propose the refund with policy evidence, an approver signs off, and the refund is executed, verified and audit-logged." width="100%"></a>
+
+*A customer emails asking for a €149 refund. The request arrives through a signed n8n webhook, agents check the order against the refund policy and propose the refund with sources, policy routes it to an approver (the requester cannot approve it), and the approved refund is executed, read back and written to a tamper-evident audit trail. Recorded from a real run of the stack; [MP4 version](docs/media/orkestr-use-case.mp4). Payments run against a labelled simulator.*
+
 ![Command center](docs/images/command.webp)
 
 | | |
@@ -26,7 +32,7 @@ n8n owns *sequencing* (webhooks, retries, waits, schedules, error workflows). Th
 
 - [Quick start](#quick-start) · [Demo walkthrough](#demo-walkthrough) · [Architecture](#architecture) · [n8n workflows](#n8n-workflows)
 - [Agents](#agents) · [Security model](#security-model) · [Evaluation](#evaluation) · [Repository layout](#repository-layout)
-- [What is real and what is simulated](#what-is-real-and-what-is-simulated) · [Limitations](#limitations) · Docs: [architecture](docs/architecture.md), [ADRs](docs/adr), [n8n](docs/n8n.md), [security](docs/security.md), [evaluation](docs/evaluation.md), [API](docs/api.md), [case studies](docs/case-studies)
+- [Quality assurance](#quality-assurance) · [Scalability](#scalability) · [What is real and what is simulated](#what-is-real-and-what-is-simulated) · [Limitations](#limitations) · Docs: [architecture](docs/architecture.md), [ADRs](docs/adr), [n8n](docs/n8n.md), [security](docs/security.md), [evaluation](docs/evaluation.md), [API](docs/api.md), [case studies](docs/case-studies), [QA report](docs/qa-report.md), [scalability](docs/scalability.md)
 
 ---
 
@@ -34,11 +40,11 @@ n8n owns *sequencing* (webhooks, retries, waits, schedules, error workflows). Th
 
 ### Docker Compose (recommended)
 
-Requirements: Docker Desktop with ~3 GB of memory available. The core profile is sized for an 8 GB Apple Silicon MacBook (PostgreSQL 512 MB, n8n 1 GB, API 512 MB, web 384 MB).
+Requirements: Docker Desktop with ~3 GB of memory available. The core profile is sized for an 8 GB Apple Silicon MacBook (PostgreSQL 512 MB, n8n 1 GB, API 768 MB with 2 workers, Redis 96 MB, web 384 MB).
 
 ```bash
 cp .env.example .env          # defaults work locally; change secrets before exposing anything
-docker compose up -d --build  # postgres+pgvector, n8n (workflows auto-imported), api, web
+docker compose up -d --build  # postgres+pgvector, redis, n8n (workflows auto-imported), api, web
 ```
 
 | Service | URL |
@@ -187,7 +193,8 @@ A read-only **MCP server** (`python -m app.mcp_server`) exposes knowledge search
 - **Webhooks signed both ways.** HMAC-SHA256 over `timestamp.body` with a 5-minute window, verified in n8n Code nodes with `timingSafeEqual`; resume callbacks are signed too, and authorisation is re-checked against the database after the Wait node regardless.
 - **Untrusted content.** Prompt-injection patterns are detected in emails and tender pages; flagged cases are held for review and flagged passages are excluded from requirements. Detection is a signal, not the boundary — the boundary is that consequential tools cannot run without a matching human approval.
 - **Tamper-evident audit.** Hash-chained per workspace; `GET /audit/verify` recomputes the chain and reports the first broken sequence.
-- Workspace isolation on every query, bcrypt passwords, JWT sessions, rate limiting, sensitive-data redaction in logs and tool records, content-sniffed uploads stored by hash, least-privilege connectors (payments are simulator-only by design).
+- **Sign-in history and lockout.** Every sign-in attempt (success, wrong password, unknown e-mail, locked) is stored with IP and device. Users see their own history under *Access log*; admins see the organisation's and can lift a lock early (audited). Five failures lock an account for 15 minutes; logins are throttled per IP and per e-mail.
+- Workspace isolation on every query, bcrypt passwords, JWT sessions, per-user rate limiting, sensitive-data redaction in logs and tool records, content-sniffed uploads stored by hash, least-privilege connectors (payments are simulator-only by design).
 
 More: [docs/security.md](docs/security.md).
 
@@ -211,7 +218,19 @@ More: [docs/security.md](docs/security.md).
 
 **Read these numbers carefully.** The datasets are small and were written by the author alongside the rules they test, so they show the system behaves as designed on known cases — not that it generalises. The tender is a generated document, not a real procurement. Two bugs were found by these suites during development (a tool-budget off-by-one and a non-unique probe) and fixed. LLM-as-judge rubric scoring runs only when a model key is configured and is reported as skipped otherwise. See [docs/evaluation.md](docs/evaluation.md).
 
-Tests: `cd backend && pytest` — 73 tests covering security primitives, state machine, policy engine, audit chain, both vertical slices through the HTTP API, dead-letter replay, and static checks on every n8n workflow.
+Tests: `cd backend && pytest` — 81 tests covering security primitives, state machine, policy engine, audit chain, both vertical slices through the HTTP API, dead-letter replay, login history and lockout, stale-run housekeeping, and static checks on every n8n workflow.
+
+---
+
+## Quality assurance
+
+`python qa/e2e.py` drives 17 business use cases through the real UI and API with Playwright: sign-in, lockout and unlock, login history, the full refund journey across two roles and n8n, prompt injection, RFP review, workflow studio, policies, knowledge search, every page for all five roles (55 renders, checked for console and server errors), viewer write protection, the audit chain, and phone layouts. Latest run: **17 / 17 pass**. Seven defects were found and fixed along the way, two of them high severity (a deadlock under load and editors that depended on a public CDN). See the [QA report](docs/qa-report.md).
+
+---
+
+## Scalability
+
+The API is stateless and runs several workers behind per-user rate limits, admission control (overload queues briefly, then sheds with `503 Retry-After` instead of hanging), a Redis single-flight read cache, and indexed queries. Measured on one 2-vCPU box that also ran the load generator: 500 concurrent users at 100 % success with p95 under 100 ms, and 1,000–2,000 users at 99.9 % success with rising latency but no failures. Each request costs about 4.4 ms of API CPU, roughly 500 active users per API core; add workers or replicas to scale. Method, raw results and caveats are in [docs/scalability.md](docs/scalability.md).
 
 ---
 
@@ -231,7 +250,9 @@ backend/
   tests/
 n8n/               workflow JSON + generator + bootstrap
 frontend/          Next.js 15 (App Router), Tailwind, shadcn-style components, Motion, React Flow, ECharts, Monaco
-docs/              architecture, ADRs, n8n, security, evaluation, API, case studies, screenshots
+qa/                Playwright end-to-end use cases, results and evidence; video capture/render scripts
+scripts/           demo, signed-event sender, load test, screenshot generator
+docs/              architecture, ADRs, n8n, security, evaluation, API, case studies, QA report, scalability, screenshots, media
 ```
 
 ---
@@ -253,8 +274,8 @@ The UI labels the effective mode of every connector and every agent run.
 - OCR needs Tesseract installed; scanned pages without it are flagged rather than silently skipped.
 - DOCX page references are logical pages (~3,000 characters), not printed pages.
 - The workflow studio visualises and triggers; editing workflows happens in n8n (and in `build_workflows.py`).
-- Rate limiting is in-process (single API instance). Redis is intentionally not part of the stack yet — see [ADR 0006](docs/adr/0006-no-redis-yet.md).
-- The Docker Compose stack and CI pipeline were written for this repository but could not be executed in the environment where it was built (no Docker daemon); the same services were run natively there. If something in Compose needs adjusting on your machine, the native steps above are the verified path.
+- Load numbers come from a single shared 2-vCPU host; capacity per core is extrapolated, not measured on production hardware ([scalability.md](docs/scalability.md)). Redis is used only for cache and rate limits and can be lost without losing data ([ADR 0006](docs/adr/0006-no-redis-yet.md)).
+- The Docker Compose stack has been run on an Apple Silicon Mac. The CI pipeline has not been run on a hosted runner yet.
 - Live Slack/Jira/HubSpot adapters follow the public APIs but were not exercised against real accounts.
 
 ## License
