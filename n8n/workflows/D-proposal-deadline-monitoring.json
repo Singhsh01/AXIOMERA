@@ -1,0 +1,421 @@
+{
+  "id": "OrkD0DeadlineMntr",
+  "name": "Orkestr D \u2014 Proposal Deadline Monitoring",
+  "active": true,
+  "nodes": [
+    {
+      "name": "Note 0",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "parameters": {
+        "content": "## Workflow D \u2014 Deadline Monitoring\nHourly (and on demand via signed webhook). Orkestr computes hours left and open mandatory requirements; owners are notified for anything due within 72h and escalations go to #bids inside 24h (rate-limited to once per 6h).",
+        "width": 640,
+        "height": 180
+      },
+      "id": "6148fa75-4f14-569e-bbba-13c87778e5a8",
+      "position": [
+        0,
+        -300
+      ]
+    },
+    {
+      "name": "Hourly Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 60
+            }
+          ]
+        }
+      },
+      "id": "33fa05f8-33a2-59df-9a3a-77023b554ddc",
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Manual Scan Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "webhookId": "91f553ea-67f7-58d8-9a74-3755a085706e",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "orkestr/deadline-scan",
+        "responseMode": "onReceived",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "dcbf48c1-39f3-5043-bc96-db2351d81a2d",
+      "position": [
+        0,
+        200
+      ]
+    },
+    {
+      "name": "Verify Signature",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Verify the HMAC signature of the incoming webhook (timestamp + '.' + raw body).\nconst crypto = require('crypto');\nconst item = $input.first();\nconst headers = item.json.headers || {};\nconst ts = headers['x-orkestr-timestamp'];\nconst sig = headers['x-orkestr-signature'];\nlet raw;\ntry { raw = await this.helpers.getBinaryDataBuffer(0, 'data'); }\ncatch (e) { raw = Buffer.from(JSON.stringify(item.json.body ?? {})); }\nconst secret = $env.ORKESTR_WEBHOOK_SECRET;\nconst now = Math.floor(Date.now() / 1000);\nlet valid = false; let reason = '';\nif (!ts || !sig) reason = 'missing signature headers';\nelse if (Math.abs(now - parseInt(ts, 10)) > 300) reason = 'timestamp outside tolerance';\nelse {\n  const expected = crypto.createHmac('sha256', secret).update(ts + '.').update(raw).digest('hex');\n  valid = expected.length === sig.length && crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(sig));\n  if (!valid) reason = 'signature mismatch';\n}\nlet body = item.json.body;\nif (!body || typeof body !== 'object' || Object.keys(body).length === 0) { try { body = JSON.parse(raw.toString('utf8')); } catch (e) { body = {}; } }\nreturn [{ json: { valid, reason, status: valid ? 200 : 401, payload: body,\n  correlation_id: body.correlation_id || headers['x-correlation-id'] || String($execution.id),\n  workspace_id: body.workspace_id || '' } }];"
+      },
+      "id": "9edb809f-d8d5-5a5e-b22c-fda3b6a6ed92",
+      "position": [
+        220,
+        200
+      ]
+    },
+    {
+      "name": "Signature Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "9aeaee0b-2f4c-5410-8523-afc9c07225a5",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "e53d543c-b1ea-5829-9a30-4d16d69f83f2",
+      "position": [
+        440,
+        200
+      ]
+    },
+    {
+      "name": "Query Active RFPs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/rfps/deadlines/at-risk?horizon_hours=72",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Orkestr-Service-Token",
+              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+            },
+            {
+              "name": "X-N8N-Execution-Id",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "X-Orkestr-Workflow",
+              "value": "D"
+            },
+            {
+              "name": "X-Orkestr-Node",
+              "value": "Query Active RFPs"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "id": "c4ee2acf-b23c-518c-b396-e5176dcdc2e1",
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "name": "Identify At-Risk Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const r = $input.first().json;\nreturn r.items.filter(i => i.hours_left > -24).map(i => ({ json: i }));"
+      },
+      "id": "4e492057-3d76-5aa3-b0f4-30098cd3183b",
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "name": "Notify Owners",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/notifications",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Orkestr-Service-Token",
+              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+            },
+            {
+              "name": "X-N8N-Execution-Id",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "X-Orkestr-Workflow",
+              "value": "D"
+            },
+            {
+              "name": "X-Orkestr-Node",
+              "value": "Notify Owners"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ title: `RFP due in ${$json.hours_left}h: ${$json.title}`, body: `${$json.open_mandatory} mandatory requirement(s) not yet evidenced \u00b7 status ${$json.status}`, severity: $json.severity, link: `/app/rfps/${$json.rfp_id}` }) }}"
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "id": "0f46e7c6-deac-5a62-b32b-865e12a05790",
+      "position": [
+        1100,
+        0
+      ]
+    },
+    {
+      "name": "Needs Escalation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return $('Identify At-Risk Items').all().filter(i => i.json.escalate).map(i => ({ json: i.json }));"
+      },
+      "id": "013b0932-7e42-5856-b566-2b2cbc0ae4ba",
+      "position": [
+        1320,
+        0
+      ]
+    },
+    {
+      "name": "Scan Complete",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/workflow-events",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Orkestr-Service-Token",
+              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+            },
+            {
+              "name": "X-N8N-Execution-Id",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "X-Orkestr-Workflow",
+              "value": "D"
+            },
+            {
+              "name": "X-Orkestr-Node",
+              "value": "Scan Complete"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ workflow: 'D', node: 'Scan Complete', status: 'succeeded', finish: true, detail: { at_risk: $json.count } }) }}"
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "executeOnce": true,
+      "id": "7955a666-9c01-5823-9110-3bf9c7a0bc12",
+      "position": [
+        880,
+        200
+      ]
+    },
+    {
+      "name": "Escalate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/rfps/{{ $json.rfp_id }}/escalate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Orkestr-Service-Token",
+              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+            },
+            {
+              "name": "X-N8N-Execution-Id",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "X-Orkestr-Workflow",
+              "value": "D"
+            },
+            {
+              "name": "X-Orkestr-Node",
+              "value": "Escalate"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ reason: `Due in ${$json.hours_left}h with ${$json.open_mandatory} open mandatory requirement(s)` }) }}"
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "id": "0e0de48f-287c-5db3-9ad5-64501d84fd23",
+      "position": [
+        1540,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Hourly Schedule": {
+      "main": [
+        [
+          {
+            "node": "Query Active RFPs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Scan Webhook": {
+      "main": [
+        [
+          {
+            "node": "Verify Signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Signature": {
+      "main": [
+        [
+          {
+            "node": "Signature Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Signature Valid?": {
+      "main": [
+        [
+          {
+            "node": "Query Active RFPs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Active RFPs": {
+      "main": [
+        [
+          {
+            "node": "Identify At-Risk Items",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Scan Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Identify At-Risk Items": {
+      "main": [
+        [
+          {
+            "node": "Notify Owners",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Owners": {
+      "main": [
+        [
+          {
+            "node": "Needs Escalation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Needs Escalation": {
+      "main": [
+        [
+          {
+            "node": "Escalate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "all",
+    "saveDataErrorExecution": "all",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": 900,
+    "errorWorkflow": "OrkZ0ErrorHandler"
+  },
+  "pinData": {},
+  "versionId": "6c393af5-9d9e-59c2-b396-ad09a0005a38",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": [],
+  "staticData": null
+}

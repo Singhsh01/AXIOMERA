@@ -1,0 +1,1068 @@
+{
+  "id": "OrkA0CustomerIntk",
+  "name": "Orkestr A \u2014 Customer Request Intake",
+  "active": true,
+  "nodes": [
+    {
+      "name": "Note 0",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "parameters": {
+        "content": "## Workflow A \u2014 Customer Request Intake\nSigned email/portal/webhook events become cases. The Orkestr API is the source of truth; this workflow sequences the stages, retries transient failures and hands consequential actions to Workflow E for human approval.",
+        "width": 620,
+        "height": 180
+      },
+      "id": "1171b1da-1d28-584f-a184-4eff924084c5",
+      "position": [
+        0,
+        -260
+      ]
+    },
+    {
+      "name": "Intake Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "webhookId": "d8ed3d7b-e091-5de4-946c-7e362845827b",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "orkestr/intake",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "e7df66d0-d2e9-5e09-a859-53573b56511d",
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Verify Signature",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Verify the HMAC signature of the incoming webhook (timestamp + '.' + raw body).\nconst crypto = require('crypto');\nconst item = $input.first();\nconst headers = item.json.headers || {};\nconst ts = headers['x-orkestr-timestamp'];\nconst sig = headers['x-orkestr-signature'];\nlet raw;\ntry { raw = await this.helpers.getBinaryDataBuffer(0, 'data'); }\ncatch (e) { raw = Buffer.from(JSON.stringify(item.json.body ?? {})); }\nconst secret = $env.ORKESTR_WEBHOOK_SECRET;\nconst now = Math.floor(Date.now() / 1000);\nlet valid = false; let reason = '';\nif (!ts || !sig) reason = 'missing signature headers';\nelse if (Math.abs(now - parseInt(ts, 10)) > 300) reason = 'timestamp outside tolerance';\nelse {\n  const expected = crypto.createHmac('sha256', secret).update(ts + '.').update(raw).digest('hex');\n  valid = expected.length === sig.length && crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(sig));\n  if (!valid) reason = 'signature mismatch';\n}\nlet body = item.json.body;\nif (!body || typeof body !== 'object' || Object.keys(body).length === 0) { try { body = JSON.parse(raw.toString('utf8')); } catch (e) { body = {}; } }\nreturn [{ json: { valid, reason, status: valid ? 200 : 401, payload: body,\n  correlation_id: body.correlation_id || headers['x-correlation-id'] || String($execution.id),\n  workspace_id: body.workspace_id || '' } }];"
+      },
+      "id": "56e29a69-d7d6-5f4a-9588-6c445cd4b46d",
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "name": "Validate Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Validate the intake payload shape before it reaches the API.\nconst v = $input.first().json;\nif (!v.valid) return [{ json: v }];\nconst p = v.payload || {};\nconst missing = ['message_id', 'from', 'subject', 'body'].filter(k => !p[k] || String(p[k]).trim() === '');\nconst emailOk = /^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(p.from || '');\nif (missing.length || !emailOk) {\n  return [{ json: { ...v, valid: false, status: 422, reason: missing.length ? 'missing fields: ' + missing.join(', ') : 'invalid sender address' } }];\n}\nreturn [{ json: { ...v, payload: { message_id: String(p.message_id).slice(0, 200), from: p.from.trim().toLowerCase(),\n  subject: String(p.subject).slice(0, 500), body: String(p.body).slice(0, 50000), correlation_id: v.correlation_id } } }];"
+      },
+      "id": "7c9d643b-43ec-51c9-946d-192c663dc11c",
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "name": "Is Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "85e4c7cd-b8bf-5226-94b1-18e18e3693ae",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b1c77075-2ccd-5ed3-8877-6bdf6d465397",
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "name": "Reject",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ accepted: false, reason: $json.reason }) }}",
+        "options": {
+          "responseCode": "={{ $json.status }}"
+        }
+      },
+      "id": "fd7a469d-7b9f-5f33-8692-01f640bd39b8",
+      "position": [
+        880,
+        200
+      ]
+    },
+    {
+      "name": "Create Case",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/ingest/email",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Orkestr-Service-Token",
+              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+            },
+            {
+              "name": "X-N8N-Execution-Id",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "X-Orkestr-Workflow",
+              "value": "A"
+            },
+            {
+              "name": "X-Orkestr-Node",
+              "value": "Create Case"
+            },
+            {
+              "name": "X-Correlation-Id",
+              "value": "={{ $('Verify Signature').first().json.correlation_id }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('Validate Payload').first().json.payload) }}"
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 3000,
+      "notes": "Idempotent on Message-ID; content-level dedup for resends",
+      "notesInFlow": true,
+      "id": "7fe3d7d0-d98d-5aa7-ab5e-299a56ecc30e",
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "name": "Duplicate?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "7993f3c3-7018-5859-b113-37e2f3ec4b59",
+              "leftValue": "={{ $json.duplicate }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "bb4bcc62-741a-50ce-83e1-2fc1202761e4",
+      "position": [
+        1100,
+        0
+      ]
+    },
+    {
+      "name": "Respond Duplicate",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ accepted: true, duplicate: true, case_number: $json.number }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "07861324-bfaa-526c-9469-0124f627140c",
+      "position": [
+        1320,
+        200
+      ]
+    },
+    {
+      "name": "Respond Accepted",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ accepted: true, case_number: $json.number, case_id: $json.case_id, execution_id: $execution.id }) }}",
+        "options": {
+          "responseCode": 202
+        }
+      },
+      "id": "c913011f-b05c-5a75-a2c8-06da60df5669",
+      "position": [
+        1320,
+        0
+      ]
+    },
+    {
+      "name": "Duplicate Suppressed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/workflow-events",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Orkestr-Service-Token",
+              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+            },
+            {
+              "name": "X-N8N-Execution-Id",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "X-Orkestr-Workflow",
+              "value": "A"
+            },
+            {
+              "name": "X-Orkestr-Node",
+              "value": "Duplicate Suppressed"
+            },
+            {
+              "name": "X-Correlation-Id",
+              "value": "={{ $('Verify Signature').first().json.correlation_id }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ workflow: 'A', node: 'Duplicate Suppressed', status: 'succeeded', correlation_id: $('Verify Signature').first().json.correlation_id, finish: true, entity_type: 'case', entity_id: $('Create Case').first().json.case_id, detail: { reason: $('Create Case').first().json.reason } }) }}"
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "executeOnce": true,
+      "id": "9ee841ea-9cce-56a0-bf1d-dae9a0d7720f",
+      "position": [
+        1540,
+        200
+      ]
+    },
+    {
+      "name": "Classify",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/cases/{{ $('Create Case').first().json.case_id }}/classify",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Orkestr-Service-Token",
+              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+            },
+            {
+              "name": "X-N8N-Execution-Id",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "X-Orkestr-Workflow",
+              "value": "A"
+            },
+            {
+              "name": "X-Orkestr-Node",
+              "value": "Classify"
+            },
+            {
+              "name": "X-Correlation-Id",
+              "value": "={{ $('Verify Signature').first().json.correlation_id }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "id": "61592e69-ad5b-50a4-9de3-750d898fd690",
+      "position": [
+        1540,
+        0
+      ]
+    },
+    {
+      "name": "Continue Automation?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "56b08a8c-8d69-5d49-9219-ac1b6b7aeff7",
+              "leftValue": "={{ $json.next === 'research' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "64feecdc-8790-527d-9473-fde99704871f",
+      "position": [
+        1760,
+        0
+      ]
+    },
+    {
+      "name": "Held For Human Review",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/workflow-events",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Orkestr-Service-Token",
+              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+            },
+            {
+              "name": "X-N8N-Execution-Id",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "X-Orkestr-Workflow",
+              "value": "A"
+            },
+            {
+              "name": "X-Orkestr-Node",
+              "value": "Held For Human Review"
+            },
+            {
+              "name": "X-Correlation-Id",
+              "value": "={{ $('Verify Signature').first().json.correlation_id }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ workflow: 'A', node: 'Held For Human Review', status: 'succeeded', correlation_id: $('Verify Signature').first().json.correlation_id, finish: true, entity_type: 'case', entity_id: $('Create Case').first().json.case_id, detail: { reason: $('Classify').first().json.next } }) }}"
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "executeOnce": true,
+      "id": "e286b22c-a4f9-58a1-a29d-71180d0bfd7d",
+      "position": [
+        1980,
+        200
+      ]
+    },
+    {
+      "name": "Retrieve Evidence",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/cases/{{ $('Create Case').first().json.case_id }}/research",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Orkestr-Service-Token",
+              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+            },
+            {
+              "name": "X-N8N-Execution-Id",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "X-Orkestr-Workflow",
+              "value": "A"
+            },
+            {
+              "name": "X-Orkestr-Node",
+              "value": "Retrieve Evidence"
+            },
+            {
+              "name": "X-Correlation-Id",
+              "value": "={{ $('Verify Signature').first().json.correlation_id }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "id": "37c9bf94-541a-5734-8108-27d057fbd829",
+      "position": [
+        1980,
+        0
+      ]
+    },
+    {
+      "name": "Propose Resolution",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/cases/{{ $('Create Case').first().json.case_id }}/resolve",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Orkestr-Service-Token",
+              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+            },
+            {
+              "name": "X-N8N-Execution-Id",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "X-Orkestr-Workflow",
+              "value": "A"
+            },
+            {
+              "name": "X-Orkestr-Node",
+              "value": "Propose Resolution"
+            },
+            {
+              "name": "X-Correlation-Id",
+              "value": "={{ $('Verify Signature').first().json.correlation_id }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "id": "cfbc6438-434c-5d2b-941e-99dba4722552",
+      "position": [
+        2200,
+        0
+      ]
+    },
+    {
+      "name": "Execute",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/cases/{{ $('Create Case').first().json.case_id }}/execute",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Orkestr-Service-Token",
+              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+            },
+            {
+              "name": "X-N8N-Execution-Id",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "X-Orkestr-Workflow",
+              "value": "A"
+            },
+            {
+              "name": "X-Orkestr-Node",
+              "value": "Execute"
+            },
+            {
+              "name": "X-Correlation-Id",
+              "value": "={{ $('Verify Signature').first().json.correlation_id }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 3000,
+      "notes": "Runs only actions approved by policy (internal, low-risk). Consequential actions wait for E.",
+      "notesInFlow": true,
+      "id": "2c2aa859-8162-560c-96f3-0b4ff006f629",
+      "position": [
+        2420,
+        0
+      ]
+    },
+    {
+      "name": "Verify",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/cases/{{ $('Create Case').first().json.case_id }}/verify",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Orkestr-Service-Token",
+              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+            },
+            {
+              "name": "X-N8N-Execution-Id",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "X-Orkestr-Workflow",
+              "value": "A"
+            },
+            {
+              "name": "X-Orkestr-Node",
+              "value": "Verify"
+            },
+            {
+              "name": "X-Correlation-Id",
+              "value": "={{ $('Verify Signature').first().json.correlation_id }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "id": "11b543ef-3092-5d36-b3ac-09c8e4b92fe4",
+      "position": [
+        2640,
+        0
+      ]
+    },
+    {
+      "name": "Needs Approval?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "9b06ea77-3e32-5a4d-85df-d5c010feeb82",
+              "leftValue": "={{ $('Propose Resolution').first().json.needs_approval }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "314f0db5-55c4-514c-9474-7189ff22edf0",
+      "position": [
+        2860,
+        0
+      ]
+    },
+    {
+      "name": "Approval Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const r = $('Propose Resolution').first().json;\nreturn r.approvals.map(id => ({ json: { approval_id: id, case_id: r.case_id, correlation_id: r.correlation_id } }));"
+      },
+      "id": "7988a3ab-c1ae-519a-b924-7521f01a4404",
+      "position": [
+        3080,
+        -120
+      ]
+    },
+    {
+      "name": "Request Approval (Workflow E)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "OrkE0ApprovalAudt",
+          "mode": "id"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "notes": "Reusable sub-workflow: each approval waits independently for a human decision",
+      "notesInFlow": true,
+      "id": "60c23246-1650-5233-835b-e22f7d334576",
+      "position": [
+        3300,
+        -120
+      ]
+    },
+    {
+      "name": "Notify Awaiting Approval",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/notifications",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Orkestr-Service-Token",
+              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+            },
+            {
+              "name": "X-N8N-Execution-Id",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "X-Orkestr-Workflow",
+              "value": "A"
+            },
+            {
+              "name": "X-Orkestr-Node",
+              "value": "Notify Awaiting Approval"
+            },
+            {
+              "name": "X-Correlation-Id",
+              "value": "={{ $('Verify Signature').first().json.correlation_id }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ title: `Case #${$('Create Case').first().json.number} awaiting approval`, body: $('Propose Resolution').first().json.rationale, severity: 'warning', link: `/app/cases/${$('Create Case').first().json.case_id}` }) }}"
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput",
+      "executeOnce": true,
+      "id": "198987fc-22ab-5913-bee5-821b6c3555ed",
+      "position": [
+        3520,
+        -120
+      ]
+    },
+    {
+      "name": "Notify Resolved",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/notifications",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Orkestr-Service-Token",
+              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+            },
+            {
+              "name": "X-N8N-Execution-Id",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "X-Orkestr-Workflow",
+              "value": "A"
+            },
+            {
+              "name": "X-Orkestr-Node",
+              "value": "Notify Resolved"
+            },
+            {
+              "name": "X-Correlation-Id",
+              "value": "={{ $('Verify Signature').first().json.correlation_id }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ title: `Case #${$('Create Case').first().json.number} ${$('Verify').first().json.status}`, body: $('Propose Resolution').first().json.rationale, severity: 'info', link: `/app/cases/${$('Create Case').first().json.case_id}` }) }}"
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput",
+      "id": "d4736331-0bea-5e94-92c4-9a42ce2b95d2",
+      "position": [
+        3080,
+        120
+      ]
+    },
+    {
+      "name": "Complete",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/workflow-events",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Orkestr-Service-Token",
+              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+            },
+            {
+              "name": "X-N8N-Execution-Id",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "X-Orkestr-Workflow",
+              "value": "A"
+            },
+            {
+              "name": "X-Orkestr-Node",
+              "value": "Complete"
+            },
+            {
+              "name": "X-Correlation-Id",
+              "value": "={{ $('Verify Signature').first().json.correlation_id }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ workflow: 'A', node: 'Complete', status: 'succeeded', correlation_id: $('Verify Signature').first().json.correlation_id, finish: true, entity_type: 'case', entity_id: $('Create Case').first().json.case_id, detail: {} }) }}"
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "executeOnce": true,
+      "id": "ccb1fd50-cad6-5636-9bd0-1b44dacfcd76",
+      "position": [
+        3740,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Intake Webhook": {
+      "main": [
+        [
+          {
+            "node": "Verify Signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Signature": {
+      "main": [
+        [
+          {
+            "node": "Validate Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Payload": {
+      "main": [
+        [
+          {
+            "node": "Is Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Valid?": {
+      "main": [
+        [
+          {
+            "node": "Create Case",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reject",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Case": {
+      "main": [
+        [
+          {
+            "node": "Duplicate?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Duplicate?": {
+      "main": [
+        [
+          {
+            "node": "Respond Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Accepted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond Duplicate": {
+      "main": [
+        [
+          {
+            "node": "Duplicate Suppressed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond Accepted": {
+      "main": [
+        [
+          {
+            "node": "Classify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify": {
+      "main": [
+        [
+          {
+            "node": "Continue Automation?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continue Automation?": {
+      "main": [
+        [
+          {
+            "node": "Retrieve Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Held For Human Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retrieve Evidence": {
+      "main": [
+        [
+          {
+            "node": "Propose Resolution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Propose Resolution": {
+      "main": [
+        [
+          {
+            "node": "Execute",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute": {
+      "main": [
+        [
+          {
+            "node": "Verify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify": {
+      "main": [
+        [
+          {
+            "node": "Needs Approval?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Needs Approval?": {
+      "main": [
+        [
+          {
+            "node": "Approval Items",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify Resolved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approval Items": {
+      "main": [
+        [
+          {
+            "node": "Request Approval (Workflow E)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Request Approval (Workflow E)": {
+      "main": [
+        [
+          {
+            "node": "Notify Awaiting Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Awaiting Approval": {
+      "main": [
+        [
+          {
+            "node": "Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Resolved": {
+      "main": [
+        [
+          {
+            "node": "Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "all",
+    "saveDataErrorExecution": "all",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": 900,
+    "errorWorkflow": "OrkZ0ErrorHandler"
+  },
+  "pinData": {},
+  "versionId": "b219518d-e7a1-5ba1-adc6-f4820e001d65",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": [],
+  "staticData": null
+}

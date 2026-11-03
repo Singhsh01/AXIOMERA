@@ -1,0 +1,881 @@
+{
+  "id": "OrkB0IncidentEscl",
+  "name": "Orkestr B \u2014 Enterprise Incident Escalation",
+  "active": true,
+  "nodes": [
+    {
+      "name": "Note 0",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "parameters": {
+        "content": "## Workflow B \u2014 Incident Escalation\nTop: event-driven incident handling. Bottom: SLA monitor every 10 minutes escalates breaches and closes resolved incidents. Jira/Slack calls go through Orkestr connectors (live or clearly-labelled simulators).",
+        "width": 640,
+        "height": 180
+      },
+      "id": "9044eace-254f-520a-a698-5d5f3be6a85d",
+      "position": [
+        0,
+        -300
+      ]
+    },
+    {
+      "name": "Incident Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "webhookId": "98074e10-7e37-5328-9a8b-e374d234ef2d",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "orkestr/incident",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "1a031930-c26d-5860-9a5b-b82c315673f5",
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Verify Signature",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Verify the HMAC signature of the incoming webhook (timestamp + '.' + raw body).\nconst crypto = require('crypto');\nconst item = $input.first();\nconst headers = item.json.headers || {};\nconst ts = headers['x-orkestr-timestamp'];\nconst sig = headers['x-orkestr-signature'];\nlet raw;\ntry { raw = await this.helpers.getBinaryDataBuffer(0, 'data'); }\ncatch (e) { raw = Buffer.from(JSON.stringify(item.json.body ?? {})); }\nconst secret = $env.ORKESTR_WEBHOOK_SECRET;\nconst now = Math.floor(Date.now() / 1000);\nlet valid = false; let reason = '';\nif (!ts || !sig) reason = 'missing signature headers';\nelse if (Math.abs(now - parseInt(ts, 10)) > 300) reason = 'timestamp outside tolerance';\nelse {\n  const expected = crypto.createHmac('sha256', secret).update(ts + '.').update(raw).digest('hex');\n  valid = expected.length === sig.length && crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(sig));\n  if (!valid) reason = 'signature mismatch';\n}\nlet body = item.json.body;\nif (!body || typeof body !== 'object' || Object.keys(body).length === 0) { try { body = JSON.parse(raw.toString('utf8')); } catch (e) { body = {}; } }\nreturn [{ json: { valid, reason, status: valid ? 200 : 401, payload: body,\n  correlation_id: body.correlation_id || headers['x-correlation-id'] || String($execution.id),\n  workspace_id: body.workspace_id || '' } }];"
+      },
+      "id": "aa51d33d-fd9e-5a02-8ba6-92ddc26298e4",
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "name": "Signature Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "9aeaee0b-2f4c-5410-8523-afc9c07225a5",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "134a2630-fb6c-5d79-8f31-375f9b0de78b",
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "name": "Reject",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ accepted: false, reason: $json.reason }) }}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "id": "729b82b9-1a5c-50d4-8803-9a3663600b99",
+      "position": [
+        660,
+        200
+      ]
+    },
+    {
+      "name": "Respond Accepted",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ accepted: true, execution_id: $execution.id }) }}",
+        "options": {
+          "responseCode": 202
+        }
+      },
+      "id": "c0a329bf-16b2-570e-98d4-ea0073c562d8",
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "name": "Categorize",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/incidents",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Orkestr-Service-Token",
+              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+            },
+            {
+              "name": "X-N8N-Execution-Id",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "X-Orkestr-Workflow",
+              "value": "B"
+            },
+            {
+              "name": "X-Orkestr-Node",
+              "value": "Categorize"
+            },
+            {
+              "name": "X-Correlation-Id",
+              "value": "={{ $('Verify Signature').first().json.correlation_id }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ ...$('Verify Signature').first().json.payload, correlation_id: $('Verify Signature').first().json.correlation_id }) }}"
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 2000,
+      "id": "6d4e0893-3f41-5afb-a5f5-7e18afd637fc",
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "name": "New Incident?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "3c5b3275-75dd-5dd9-b335-1bbcb62a005b",
+              "leftValue": "={{ !$json.duplicate }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "e0dcd226-6a54-52af-87c4-a1ee601118ca",
+      "position": [
+        1100,
+        0
+      ]
+    },
+    {
+      "name": "Retrieve Context",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/cases/{{ $('Categorize').first().json.case_id }}/research",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Orkestr-Service-Token",
+              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+            },
+            {
+              "name": "X-N8N-Execution-Id",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "X-Orkestr-Workflow",
+              "value": "B"
+            },
+            {
+              "name": "X-Orkestr-Node",
+              "value": "Retrieve Context"
+            },
+            {
+              "name": "X-Correlation-Id",
+              "value": "={{ $('Verify Signature').first().json.correlation_id }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "id": "3498e792-1e72-5ceb-a7e1-a015cc94d6da",
+      "position": [
+        1320,
+        0
+      ]
+    },
+    {
+      "name": "Assign Owner",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/cases/{{ $('Categorize').first().json.case_id }}/assign",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Orkestr-Service-Token",
+              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+            },
+            {
+              "name": "X-N8N-Execution-Id",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "X-Orkestr-Workflow",
+              "value": "B"
+            },
+            {
+              "name": "X-Orkestr-Node",
+              "value": "Assign Owner"
+            },
+            {
+              "name": "X-Correlation-Id",
+              "value": "={{ $('Verify Signature').first().json.correlation_id }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "id": "b707e577-21cc-5c7f-b4b0-f77b30da4709",
+      "position": [
+        1540,
+        0
+      ]
+    },
+    {
+      "name": "Create Jira Task",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/cases/{{ $('Categorize').first().json.case_id }}/actions/create_jira_issue",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Orkestr-Service-Token",
+              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+            },
+            {
+              "name": "X-N8N-Execution-Id",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "X-Orkestr-Workflow",
+              "value": "B"
+            },
+            {
+              "name": "X-Orkestr-Node",
+              "value": "Create Jira Task"
+            },
+            {
+              "name": "X-Correlation-Id",
+              "value": "={{ $('Verify Signature').first().json.correlation_id }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 3000,
+      "notes": "Retries transient Jira failures (HTTP 503 from the connector)",
+      "notesInFlow": true,
+      "id": "6f9b64e2-5bd5-5a15-8725-4fdb4a57c067",
+      "position": [
+        1760,
+        0
+      ]
+    },
+    {
+      "name": "Notify Slack",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/cases/{{ $('Categorize').first().json.case_id }}/actions/post_slack_message",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Orkestr-Service-Token",
+              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+            },
+            {
+              "name": "X-N8N-Execution-Id",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "X-Orkestr-Workflow",
+              "value": "B"
+            },
+            {
+              "name": "X-Orkestr-Node",
+              "value": "Notify Slack"
+            },
+            {
+              "name": "X-Correlation-Id",
+              "value": "={{ $('Verify Signature').first().json.correlation_id }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 3000,
+      "id": "82ac62eb-95ad-5cad-90fc-875f6cd4e080",
+      "position": [
+        1980,
+        0
+      ]
+    },
+    {
+      "name": "Incident Routed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/workflow-events",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Orkestr-Service-Token",
+              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+            },
+            {
+              "name": "X-N8N-Execution-Id",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "X-Orkestr-Workflow",
+              "value": "B"
+            },
+            {
+              "name": "X-Orkestr-Node",
+              "value": "Incident Routed"
+            },
+            {
+              "name": "X-Correlation-Id",
+              "value": "={{ $('Verify Signature').first().json.correlation_id }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ workflow: 'B', node: 'Incident Routed', status: 'succeeded', correlation_id: $('Verify Signature').first().json.correlation_id, finish: true, entity_type: 'case', entity_id: $('Categorize').first().json.case_id, detail: { jira: $('Create Jira Task').first().json.jira, owner: $('Assign Owner').first().json.assignee } }) }}"
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "executeOnce": true,
+      "id": "385df52e-52cc-5f01-8c2c-13ba64953370",
+      "position": [
+        2200,
+        0
+      ]
+    },
+    {
+      "name": "SLA Monitor (10 min)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 10
+            }
+          ]
+        }
+      },
+      "id": "f8f0cc36-ce7c-5032-acf5-8db7e73f84ae",
+      "position": [
+        0,
+        420
+      ]
+    },
+    {
+      "name": "Monitor SLA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/ops/sla/scan",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Orkestr-Service-Token",
+              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+            },
+            {
+              "name": "X-N8N-Execution-Id",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "X-Orkestr-Workflow",
+              "value": "B"
+            },
+            {
+              "name": "X-Orkestr-Node",
+              "value": "Monitor SLA"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "id": "a898af75-e295-547d-b98e-e4cbbf39cb4c",
+      "position": [
+        220,
+        420
+      ]
+    },
+    {
+      "name": "Breaches?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "fab8bf2d-49f6-575a-838f-71389ebc05cf",
+              "leftValue": "={{ $json.count > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f1590d42-721b-53d2-b086-0e4224070104",
+      "position": [
+        440,
+        420
+      ]
+    },
+    {
+      "name": "Each Breach",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "parameters": {
+        "fieldToSplitOut": "newly_breached",
+        "options": {}
+      },
+      "id": "013ded19-6e24-5bcc-8ccc-0c9680e5890c",
+      "position": [
+        660,
+        360
+      ]
+    },
+    {
+      "name": "Escalate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/notifications",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Orkestr-Service-Token",
+              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+            },
+            {
+              "name": "X-N8N-Execution-Id",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "X-Orkestr-Workflow",
+              "value": "B"
+            },
+            {
+              "name": "X-Orkestr-Node",
+              "value": "Escalate"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ title: `SLA breached: case #${$json.number} (${$json.priority})`, body: `${$json.title} \u00b7 escalation level ${$json.level} \u00b7 team ${$json.team}`, severity: 'critical', slack_channel: '#ops-escalations', link: `/app/cases/${$json.case_id}` }) }}"
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "id": "d17edb1c-4f4f-51e7-bd8a-54ebdf0a8bf0",
+      "position": [
+        880,
+        360
+      ]
+    },
+    {
+      "name": "Close Resolved",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/ops/auto-close",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Orkestr-Service-Token",
+              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+            },
+            {
+              "name": "X-N8N-Execution-Id",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "X-Orkestr-Workflow",
+              "value": "B"
+            },
+            {
+              "name": "X-Orkestr-Node",
+              "value": "Close Resolved"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "executeOnce": true,
+      "id": "c416dc35-3dfe-537d-a15f-f9c1a82b8935",
+      "position": [
+        1100,
+        480
+      ]
+    },
+    {
+      "name": "Monitor Complete",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/workflow-events",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Orkestr-Service-Token",
+              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+            },
+            {
+              "name": "X-N8N-Execution-Id",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "X-Orkestr-Workflow",
+              "value": "B"
+            },
+            {
+              "name": "X-Orkestr-Node",
+              "value": "Monitor Complete"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ workflow: 'B', node: 'Monitor Complete', status: 'succeeded', finish: true, detail: { closed: $json.closed } }) }}"
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "executeOnce": true,
+      "id": "aa54841a-0d2b-5993-92a1-21e5886f167d",
+      "position": [
+        1320,
+        480
+      ]
+    }
+  ],
+  "connections": {
+    "Incident Webhook": {
+      "main": [
+        [
+          {
+            "node": "Verify Signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Signature": {
+      "main": [
+        [
+          {
+            "node": "Signature Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Signature Valid?": {
+      "main": [
+        [
+          {
+            "node": "Respond Accepted",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reject",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond Accepted": {
+      "main": [
+        [
+          {
+            "node": "Categorize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Categorize": {
+      "main": [
+        [
+          {
+            "node": "New Incident?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New Incident?": {
+      "main": [
+        [
+          {
+            "node": "Retrieve Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retrieve Context": {
+      "main": [
+        [
+          {
+            "node": "Assign Owner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assign Owner": {
+      "main": [
+        [
+          {
+            "node": "Create Jira Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Jira Task": {
+      "main": [
+        [
+          {
+            "node": "Notify Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Slack": {
+      "main": [
+        [
+          {
+            "node": "Incident Routed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SLA Monitor (10 min)": {
+      "main": [
+        [
+          {
+            "node": "Monitor SLA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Monitor SLA": {
+      "main": [
+        [
+          {
+            "node": "Breaches?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Breaches?": {
+      "main": [
+        [
+          {
+            "node": "Each Breach",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Close Resolved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Each Breach": {
+      "main": [
+        [
+          {
+            "node": "Escalate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Escalate": {
+      "main": [
+        [
+          {
+            "node": "Close Resolved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Close Resolved": {
+      "main": [
+        [
+          {
+            "node": "Monitor Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "all",
+    "saveDataErrorExecution": "all",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": 900,
+    "errorWorkflow": "OrkZ0ErrorHandler"
+  },
+  "pinData": {},
+  "versionId": "d1649f04-5ffd-5e7d-bfd8-cc2016dd0ca1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": [],
+  "staticData": null
+}

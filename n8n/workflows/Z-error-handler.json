@@ -1,0 +1,90 @@
+{
+  "id": "OrkZ0ErrorHandler",
+  "name": "Orkestr Z \u2014 Error Handler (dead-letter)",
+  "active": false,
+  "nodes": [
+    {
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "parameters": {},
+      "id": "8fd9e552-a5f3-56a5-b5b6-c2dc29bd6629",
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Report Dead Letter",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/workflow-events/error",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Orkestr-Service-Token",
+              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+            },
+            {
+              "name": "X-N8N-Execution-Id",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "X-Orkestr-Workflow",
+              "value": "Z"
+            },
+            {
+              "name": "X-Orkestr-Node",
+              "value": "Report Dead Letter"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ workflow_name: $json.workflow.name, workflow_id: $json.workflow.id, execution_id: String($json.execution.id ?? ''), last_node: $json.execution.lastNodeExecuted, error: ($json.execution.error && $json.execution.error.message) || 'unknown error', payload: { mode: $json.execution.mode } }) }}"
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "id": "55995aa5-764e-53ef-a2b9-28583a2da615",
+      "position": [
+        220,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Report Dead Letter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "all",
+    "saveDataErrorExecution": "all",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": 900
+  },
+  "pinData": {},
+  "versionId": "5d8b22ef-696f-59d1-ad47-388812878cec",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": [],
+  "staticData": null
+}
