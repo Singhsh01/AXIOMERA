@@ -10,10 +10,10 @@ CAP = """(([step, text, top]) => {
   document.getElementById('qa-cap')?.remove();
   const d = document.createElement('div'); d.id = 'qa-cap';
   d.style.cssText = 'position:fixed;left:0;right:0;margin:0 auto;width:fit-content;' + (top ? 'top:12px;' : 'bottom:28px;') + 'z-index:99999;display:flex;align-items:center;gap:14px;' +
-    'padding:14px 22px 14px 14px;border-radius:16px;background:rgba(20,26,51,0.92);color:#fff;font:500 19px "IBM Plex Sans",sans-serif;' +
-    'box-shadow:0 18px 50px -12px rgba(20,26,51,.45);max-width:1120px;letter-spacing:-0.005em;backdrop-filter:blur(8px)';
+    'padding:14px 24px 14px 14px;border-radius:2px;background:rgba(24,22,19,0.94);color:#F4F0E8;font:600 19px "Manrope Variable",sans-serif;' +
+    'box-shadow:0 24px 60px -24px rgba(24,22,19,.5);max-width:1120px;letter-spacing:-0.01em';
   const b = document.createElement('span');
-  b.style.cssText = 'flex:none;display:grid;place-items:center;min-width:34px;height:34px;padding:0 10px;border-radius:10px;background:linear-gradient(180deg,#7D6EEA,#4B3BC4);font:600 16px "IBM Plex Sans",sans-serif';
+  b.style.cssText = 'flex:none;display:grid;place-items:center;min-width:34px;height:34px;padding:0 10px;background:#8C5E34;color:#FBF9F4;font:500 14px "IBM Plex Mono",monospace';
   b.textContent = step; d.append(b, document.createTextNode(text)); document.body.append(d);
 })"""
 
@@ -30,9 +30,12 @@ tok = lambda who: {"Authorization": "Bearer " + http.post("/api/v1/auth/login", 
 
 with sync_playwright() as pw:
     b = pw.chromium.launch()
-    new = lambda: b.new_context(viewport={"width": 1280, "height": 800}, device_scale_factor=2).new_page()
-    land = new(); land.goto(WEB); land.wait_for_timeout(2500)
-    snap(land, "s1", "▶", "A customer emails asking for a €149 refund. Here is what ORKESTR does with it.")
+    def new():
+        ctx = b.new_context(viewport={"width": 1280, "height": 800}, device_scale_factor=2)
+        ctx.add_init_script("try{localStorage.setItem('axiomera-theme','light')}catch(e){}")
+        return ctx.new_page()
+    land = new(); land.goto(WEB); land.wait_for_timeout(3200)
+    snap(land, "s1", "▶", "A customer emails asking for a €149 refund. Here is what Axiomera does with it.")
 
     ops = new(); login(ops, "ops")
     ops.goto(f"{WEB}/app/cases"); ops.get_by_role("button", name="New request").click()

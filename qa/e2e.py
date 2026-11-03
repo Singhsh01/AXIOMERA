@@ -22,6 +22,7 @@ from playwright.sync_api import Page, expect, sync_playwright
 HERE = Path(__file__).resolve().parent
 SHOTS = HERE / "screens"
 PW = "orkestr-demo"
+THEME = "light"
 RESULTS: list[dict] = []
 CONSOLE: list[dict] = []
 
@@ -37,28 +38,35 @@ class Ctx:
     def __init__(self, web: str, api: str, browser):
         self.web, self.api, self.browser = web, api, browser
         self.http = httpx.Client(base_url=api, timeout=30)
+        self.states: dict = {}
 
     def token(self, who: str) -> dict:
         r = self.http.post("/api/v1/auth/login", json={"email": f"{who}@orkestr.dev", "password": PW})
         r.raise_for_status()
         return {"Authorization": f"Bearer {r.json()['token']}"}
 
-    def page(self, who: str | None = None, viewport=(1440, 900)) -> Page:
-        ctx = self.browser.new_context(viewport={"width": viewport[0], "height": viewport[1]})
+    def page(self, who: str | None = None, viewport=(1440, 900), theme_free: bool = False) -> Page:
+        state = self.states.get(who) if who else None
+        ctx = self.browser.new_context(viewport={"width": viewport[0], "height": viewport[1]}, storage_state=state)
+        if not theme_free:
+            ctx.add_init_script(f"try{{localStorage.setItem('axiomera-theme','{THEME}')}}catch(e){{}}")
         p = ctx.new_page()
         p.on("console", lambda m: m.type == "error" and CONSOLE.append({"url": p.url, "text": m.text[:300]}))
         p.on("response", lambda r: r.status >= 500 and CONSOLE.append({"url": r.url, "text": f"HTTP {r.status}"}))
-        if who:
+        if who and state:
+            p.goto(f"{self.web}/app"); p.wait_for_url("**/app", timeout=15000)
+        elif who:
             p.goto(f"{self.web}/login")
             p.get_by_label("Email").fill(f"{who}@orkestr.dev")
             p.get_by_label("Password").fill(PW)
             p.get_by_role("button", name="Sign in").click()
             p.wait_for_url("**/app", timeout=15000)
+            self.states[who] = ctx.storage_state()
         return p
 
     def shot(self, p: Page, name: str):
         SHOTS.mkdir(exist_ok=True)
-        p.screenshot(path=str(SHOTS / f"{name}.png"), full_page=False)
+        p.screenshot(path=str(SHOTS / f"{name}-{THEME}.png"), full_page=False)
 
 
 # ---------------------------------------------------------------- authentication & access
@@ -138,6 +146,7 @@ def t_history(c: Ctx):
 @case("AUTH-05", "Sign out ends the session; protected pages redirect to sign-in", "operator")
 def t_logout(c: Ctx):
     p = c.page("ops")
+    c.states.pop("ops", None)
     p.get_by_role("button", name="Sign out").click()
     p.wait_for_url("**/login")
     p.goto(f"{c.web}/app/cases")
@@ -243,7 +252,7 @@ def t_rfp(c: Ctx):
     first = p.locator("a[href^='/app/rfps/']").first
     expect(first).to_be_visible(timeout=15000)
     first.click()
-    expect(p.get_by_text("Requirement", exact=False).first).to_be_visible(timeout=15000)
+    expect(p.locator("tbody tr").first).to_be_visible(timeout=15000)
     c.shot(p, "uc-04a-rfp-matrix")
     rows = p.locator("tbody tr")
     n = rows.count()
@@ -349,7 +358,7 @@ def t_audit(c: Ctx):
 
 # ---------------------------------------------------------------- UX quality
 
-@case("UX-01", "Landing page: stakeholder navigation and no horizontal scroll on phones", "anonymous")
+@case("UX-01", "Landing page: brand, navigation and no horizontal scroll on phones", "anonymous")
 def t_landing(c: Ctx):
     p = c.page(viewport=(390, 844))
     p.goto(c.web)
@@ -357,11 +366,12 @@ def t_landing(c: Ctx):
     c.shot(p, "ux-01-landing-mobile")
     d = c.page()
     d.goto(c.web)
-    for name in ["Request lifecycle", "Capabilities", "Governance & controls"]:
-        expect(d.get_by_role("link", name=name, exact=True)).to_be_visible()
+    for name in ["Platform", "Request lifecycle", "Governance", "Evidence"]:
+        expect(d.get_by_role("banner").get_by_role("link", name=name, exact=True)).to_be_visible()
     c.shot(d, "ux-01-landing-desktop")
     assert over <= 1, f"horizontal overflow {over}px"
-    return "nav: Request lifecycle · Capabilities · Governance & controls; mobile overflow 0px"
+    assert "Axiomera" in d.title(), d.title()
+    return f"title '{d.title()}'; nav: Platform · Request lifecycle · Governance · Evidence; mobile overflow {over}px"
 
 
 @case("UX-02", "App shell on a phone: menu opens, pages fit the width", "operator")
@@ -373,6 +383,26 @@ def t_mobile_app(c: Ctx):
     return "command center fits 390px"
 
 
+@case("UX-03", "Theme switch: toggles light/dark, persists across pages and reloads, no layout shift", "operator")
+def t_theme(c: Ctx):
+    p = c.page("ops", theme_free=True)
+    p.wait_for_timeout(900)  # let the header's entry animation finish before measuring
+    start = p.evaluate("document.documentElement.dataset.theme")
+    box = p.get_by_role("heading", name="Command center").bounding_box()
+    p.get_by_role("button", name="Switch to").first.click()
+    p.wait_for_timeout(500)
+    flipped = p.evaluate("document.documentElement.dataset.theme")
+    assert flipped != start, (start, flipped)
+    box2 = p.get_by_role("heading", name="Command center").bounding_box()
+    assert abs(box["y"] - box2["y"]) < 1 and abs(box["height"] - box2["height"]) < 1, "layout shifted on theme switch"
+    bg = p.evaluate("getComputedStyle(document.body).backgroundColor")
+    p.goto(f"{c.web}/app/cases"); p.reload()
+    assert p.evaluate("document.documentElement.dataset.theme") == flipped, "theme not persisted"
+    c.shot(p, f"ux-03-theme-{flipped}")
+    p.get_by_role("button", name="Switch to").first.click()  # restore
+    return f"{start} → {flipped} (body {bg}); persisted across navigation and reload; heading moved 0px"
+
+
 # ---------------------------------------------------------------- runner
 
 def main():
@@ -380,12 +410,15 @@ def main():
     ap.add_argument("--web", default="http://localhost:3000")
     ap.add_argument("--api", default="http://localhost:8000")
     ap.add_argument("--only", default="")
+    ap.add_argument("--theme", default="light", choices=["light", "dark"])
     a = ap.parse_args()
     tests = [v for v in globals().values() if callable(v) and hasattr(v, "meta")]
     if a.only:
         tests = [t for t in tests if t.meta[0] in a.only.split(",")]
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
+        global THEME
+        THEME = a.theme
         c = Ctx(a.web, a.api, browser)
         for t in tests:
             cid, title, role = t.meta
@@ -400,7 +433,8 @@ def main():
         browser.close()
     out = {"ran_at": time.strftime("%Y-%m-%d %H:%M:%S"), "passed": sum(r["result"] == "pass" for r in RESULTS),
            "failed": sum(r["result"] == "fail" for r in RESULTS), "cases": RESULTS, "console_errors": CONSOLE}
-    (HERE / "results.json").write_text(json.dumps(out, indent=2))
+    out["theme"] = a.theme
+    (HERE / f"results-{a.theme}.json").write_text(json.dumps(out, indent=2))
     print(f"\n{out['passed']} passed, {out['failed']} failed")
 
 

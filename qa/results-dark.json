@@ -1,0 +1,162 @@
+{
+  "ran_at": "2026-11-03 22:40:08",
+  "passed": 18,
+  "failed": 0,
+  "cases": [
+    {
+      "id": "AUTH-01",
+      "title": "Valid sign-in lands on the command center and shows the user's name",
+      "role": "operator",
+      "result": "pass",
+      "evidence": "Landed on /app as Olivia Operator",
+      "seconds": 1.6
+    },
+    {
+      "id": "AUTH-02",
+      "title": "Wrong password is refused with a clear message and no session",
+      "role": "anonymous",
+      "result": "pass",
+      "evidence": "Alert shown: 'Invalid email or password'",
+      "seconds": 1.3
+    },
+    {
+      "id": "AUTH-03",
+      "title": "Five wrong passwords lock the account; the correct password is then refused (423)",
+      "role": "anonymous",
+      "result": "pass",
+      "evidence": "401\u00d75 \u2192 423 while locked \u2192 admin unlocked in UI \u2192 200",
+      "seconds": 3.0
+    },
+    {
+      "id": "AUTH-04",
+      "title": "Login history: every attempt is listed with result, IP and device",
+      "role": "viewer",
+      "result": "pass",
+      "evidence": "Own history shows failed + successful attempts; org log is 403 for viewers",
+      "seconds": 1.8
+    },
+    {
+      "id": "AUTH-05",
+      "title": "Sign out ends the session; protected pages redirect to sign-in",
+      "role": "operator",
+      "result": "pass",
+      "evidence": "Redirected to /login after sign-out",
+      "seconds": 0.7
+    },
+    {
+      "id": "UC-01",
+      "title": "Refund request: intake via n8n \u2192 triage \u2192 proposed refund \u2192 approver approves \u2192 executed and verified",
+      "role": "operator \u2192 approver",
+      "result": "pass",
+      "evidence": "2 approvals decided by approver; operator decision refused (403); actions [('issue_refund', 'verified'), ('send_customer_email', 'verified')]; case \u2192 resolved",
+      "seconds": 14.0
+    },
+    {
+      "id": "UC-02",
+      "title": "Prompt-injection email is flagged and cannot auto-approve a refund",
+      "role": "operator",
+      "result": "pass",
+      "evidence": "case #1032 flagged (2 injection finding(s)); no action executed",
+      "seconds": 6.4
+    },
+    {
+      "id": "UC-03",
+      "title": "Approval scope binding (verified by the backend unit suite; not reachable through the public API by design)",
+      "role": "backend tests",
+      "result": "pass",
+      "evidence": "server-side tests: test_platform_units.py",
+      "seconds": 0.0
+    },
+    {
+      "id": "UC-04",
+      "title": "RFP workspace: requirements, compliance evidence and proposal draft are visible",
+      "role": "reviewer",
+      "result": "pass",
+      "evidence": "24 requirement rows rendered with evidence panel",
+      "seconds": 2.3
+    },
+    {
+      "id": "UC-05",
+      "title": "Workflow studio: n8n workflow graph loads and a node's definition opens",
+      "role": "operator",
+      "result": "pass",
+      "evidence": "6 workflows listed; graph rendered; node definition opened",
+      "seconds": 2.2
+    },
+    {
+      "id": "UC-06",
+      "title": "Policies: admins edit, invalid JSON rejected; non-admins read-only",
+      "role": "admin / operator",
+      "result": "pass",
+      "evidence": "operator read-only; unsafe policy \u2192 422; unchanged policy re-saved \u2192 200",
+      "seconds": 2.3
+    },
+    {
+      "id": "UC-07",
+      "title": "Knowledge base: hybrid search returns cited passages",
+      "role": "operator",
+      "result": "pass",
+      "evidence": "search for 'refund policy' returned passages",
+      "seconds": 3.6
+    },
+    {
+      "id": "UC-08",
+      "title": "Every app page renders for every role without errors",
+      "role": "all roles",
+      "result": "pass",
+      "evidence": "55 page renders across 5 roles, 0 console errors, 0 server errors",
+      "seconds": 48.8
+    },
+    {
+      "id": "UC-09",
+      "title": "Viewer cannot write: no New request / trigger buttons, API refuses writes",
+      "role": "viewer",
+      "result": "pass",
+      "evidence": "UI hides writes; API returns 403",
+      "seconds": 0.7
+    },
+    {
+      "id": "UC-10",
+      "title": "Audit chain verifies end to end",
+      "role": "admin",
+      "result": "pass",
+      "evidence": "/api/v1/audit/verify: {'valid': True, 'events': 674, 'head': 'df03c788ea2b0e9c242244e6f497f46fedf7deb64bd6755aad64ffc99ea7ffc0'}",
+      "seconds": 0.1
+    },
+    {
+      "id": "UX-01",
+      "title": "Landing page: brand, navigation and no horizontal scroll on phones",
+      "role": "anonymous",
+      "result": "pass",
+      "evidence": "title 'Axiomera \u2014 Autonomous Enterprise Operations & Proposal Intelligence Platform'; nav: Platform \u00b7 Request lifecycle \u00b7 Governance \u00b7 Evidence; mobile overflow 0px",
+      "seconds": 1.0
+    },
+    {
+      "id": "UX-02",
+      "title": "App shell on a phone: menu opens, pages fit the width",
+      "role": "operator",
+      "result": "pass",
+      "evidence": "command center fits 390px",
+      "seconds": 0.8
+    },
+    {
+      "id": "UX-03",
+      "title": "Theme switch: toggles light/dark, persists across pages and reloads, no layout shift",
+      "role": "operator",
+      "result": "pass",
+      "evidence": "dark \u2192 light (body rgb(244, 240, 232)); persisted across navigation and reload; heading moved 0px",
+      "seconds": 2.6
+    }
+  ],
+  "console_errors": [
+    {
+      "url": "http://localhost:3000/login",
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    },
+    {
+      "url": "http://localhost:3000/app/cases",
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    }
+  ],
+  "theme": "dark"
+}

@@ -16,5 +16,5 @@ for i in 1 2 3 4 5 6; do
   mv tmp_s$i.mp4 s$i.mp4
 done
 printf "file 's%d.mp4'\n" 1 2 3 4 5 6 > list.txt
-ffmpeg -y -loglevel error -f concat -safe 0 -i list.txt -c copy -movflags +faststart tmp_out.mp4 && mv tmp_out.mp4 orkestr-use-case.mp4
-ffprobe -v error -show_entries format=duration:stream=width,height,r_frame_rate,nb_frames -of compact orkestr-use-case.mp4
+ffmpeg -y -loglevel error -f concat -safe 0 -i list.txt -c copy -movflags +faststart tmp_out.mp4 && mv tmp_out.mp4 axiomera-use-case.mp4
+ffprobe -v error -show_entries format=duration:stream=width,height,r_frame_rate,nb_frames -of compact axiomera-use-case.mp4
