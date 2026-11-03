@@ -6,8 +6,10 @@ from typing import Any
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.orm import Session
 
+from app.core.cache import cached
 from app.db import get_db, new_id, session_factory
 from app.deps import Principal, require
 from app.integrations import connectors
@@ -118,7 +120,11 @@ def _case_summary(c: Case) -> dict[str, Any]:
 @router.get("/cases")
 def list_cases(status: str | None = None, kind: str | None = None, q: str | None = None, limit: int = Query(100, le=500),
                p: Principal = Depends(require("read")), db: Session = Depends(get_db)):
-    stmt = select(Case).where(Case.workspace_id == p.workspace_id)
+    return cached(f"cases:{p.workspace_id}:{status}:{kind}:{q}:{limit}", 2, lambda: _list_cases(status, kind, q, limit, p, db))
+
+
+def _list_cases(status, kind, q, limit, p, db):
+    stmt = select(Case).options(selectinload(Case.customer), selectinload(Case.actions)).where(Case.workspace_id == p.workspace_id)
     if status == "open":
         stmt = stmt.where(Case.status.notin_(["resolved", "closed"]))
     elif status:

@@ -19,6 +19,7 @@ from sqlalchemy.orm.attributes import flag_modified
 
 from app.agents.runtime import TOOLS
 from app.config import get_settings
+from app.core.cache import cached, invalidate
 from app.core.security import sign_payload
 from app.db import get_db, new_id, session_factory, utcnow
 from app.deps import Principal, get_principal, require
@@ -53,7 +54,7 @@ router = APIRouter(tags=["platform"])
 # =========================================================================== approvals
 def _approval_view(db: Session, a: Approval) -> dict[str, Any]:
     d = to_dict(a, {"resume_url"})
-    d["waiting_in_n8n"] = bool(a.resume_url)
+    d["waiting_in_n8n"] = bool(a.resume_url) and a.status == "pending"  # only while n8n is actually paused on it
     if a.entity_type == "case_action":
         act = db.get(CaseAction, a.entity_id)
         if act:
@@ -65,6 +66,10 @@ def _approval_view(db: Session, a: Approval) -> dict[str, Any]:
 
 @router.get("/approvals")
 def list_approvals(status: str | None = None, p: Principal = Depends(require("read")), db: Session = Depends(get_db)):
+    return cached(f"appr:{p.workspace_id}:{status}", 2, lambda: _list_approvals(status, p, db))
+
+
+def _list_approvals(status, p, db):
     q = select(Approval).where(Approval.workspace_id == p.workspace_id)
     if status:
         q = q.where(Approval.status == status)
@@ -133,6 +138,8 @@ def decide(approval_id: str, body: DecisionIn, bg: BackgroundTasks, p: Principal
         raise HTTPException(e.code, str(e)) from e
     ops.on_approval_decided(db, a, p.actor)
     db.commit()
+    invalidate(f"dash:{p.workspace_id}")
+    invalidate(f"appr:{p.workspace_id}")
     bg.add_task(_resume_or_fallback, a.id)
     return _approval_view(db, a)
 
@@ -251,6 +258,10 @@ def verify_audit(p: Principal = Depends(require("read")), db: Session = Depends(
 # =========================================================================== notifications
 @router.get("/notifications")
 def list_notifications(p: Principal = Depends(require("read")), db: Session = Depends(get_db)):
+    return cached(f"notif:{p.workspace_id}", 2, lambda: _list_notifications(p, db))
+
+
+def _list_notifications(p, db):
     q = select(Notification).where(Notification.workspace_id == p.workspace_id).order_by(Notification.created_at.desc()).limit(50)
     return [to_dict(n) for n in db.scalars(q)]
 
@@ -283,6 +294,7 @@ def mark_read(nid: str, p: Principal = Depends(require("read")), db: Session = D
     n = not_found(db.get(Notification, nid), p.workspace_id, "Notification")
     n.read = True
     db.commit()
+    invalidate(f"notif:{p.workspace_id}")
     return {"ok": True}
 
 
@@ -300,6 +312,10 @@ def _run_view(r: WorkflowRun, with_steps: bool = False) -> dict[str, Any]:
 
 @router.get("/workflows")
 def list_workflows(p: Principal = Depends(require("read")), db: Session = Depends(get_db)):
+    return cached(f"wf:{p.workspace_id}", 5, lambda: _list_workflows(p=p, db=db))
+
+
+def _list_workflows(p, db):
     out = []
     for key, meta in workflows.CATALOG.items():
         g = workflows.graph(key)
@@ -532,6 +548,10 @@ def _ensure_connections(db: Session, workspace_id: str) -> list[IntegrationConne
 
 @router.get("/integrations")
 def list_integrations(p: Principal = Depends(require("read")), db: Session = Depends(get_db)):
+    return cached(f"integ:{p.workspace_id}", 10, lambda: _list_integrations(p=p, db=db))
+
+
+def _list_integrations(p, db):
     out = []
     for c in _ensure_connections(db, p.workspace_id):
         h = connectors.get_connector(db, p.workspace_id, c.kind).health()
@@ -606,6 +626,10 @@ def put_policies(body: dict[str, Any], p: Principal = Depends(require("admin")),
 # =========================================================================== analytics
 @router.get("/analytics/overview")
 def analytics(days: int = Query(14, le=90), p: Principal = Depends(require("read")), db: Session = Depends(get_db)):
+    return cached(f"analytics:{p.workspace_id}:{days}", 15, lambda: _analytics(days=days, p=p, db=db))
+
+
+def _analytics(days: int, p, db):
     ws, since = p.workspace_id, utcnow() - timedelta(days=days)
     runs = db.scalars(select(WorkflowRun).where(WorkflowRun.workspace_id == ws, WorkflowRun.started_at >= since)).all()
     finished = [r for r in runs if r.status in {"succeeded", "failed"}]
@@ -675,6 +699,10 @@ def analytics(days: int = Query(14, le=90), p: Principal = Depends(require("read
 
 @router.get("/dashboard/summary")
 def dashboard(p: Principal = Depends(require("read")), db: Session = Depends(get_db)):
+    return cached(f"dash:{p.workspace_id}", get_settings().cache_ttl_seconds, lambda: _dashboard(p=p, db=db))
+
+
+def _dashboard(p, db):
     ws = p.workspace_id
     open_cases = db.scalars(select(Case).where(Case.workspace_id == ws, Case.status.notin_(["resolved", "closed"]))).all()
     pending = db.scalars(select(Approval).where(Approval.workspace_id == ws, Approval.status == "pending").order_by(Approval.created_at.desc())).all()

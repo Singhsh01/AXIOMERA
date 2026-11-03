@@ -1,6 +1,6 @@
 # Orkestr — local stack, sized for an Apple Silicon laptop with 8 GB RAM.
 #
-#   docker compose up -d --build                         core: postgres, n8n, api, web  (~2 GB)
+#   docker compose up -d --build                         core: postgres, redis, n8n, api (2 workers), web  (~2.3 GB)
 #   docker compose --profile observability up -d         + OpenTelemetry collector, Jaeger, Prometheus
 #
 # n8n and the API bind to 127.0.0.1 only; the n8n editor is not exposed beyond this machine.
@@ -31,7 +31,7 @@ services:
       POSTGRES_USER: orkestr
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-orkestr}
       POSTGRES_DB: orkestr
-    command: ["postgres", "-c", "shared_buffers=128MB", "-c", "max_connections=60"]
+    command: ["postgres", "-c", "shared_buffers=128MB", "-c", "max_connections=120"]
     volumes: [pgdata:/var/lib/postgresql/data]
     ports: ["127.0.0.1:${POSTGRES_HOST_PORT:-5433}:5432"]   # host port only for local tools; containers use postgres:5432
     healthcheck:
@@ -50,13 +50,26 @@ services:
       ORKESTR_N8N_BASE_URL: http://n8n:5678
       ORKESTR_CORS_ORIGINS: '["http://localhost:3000"]'
       ORKESTR_OTEL_ENDPOINT: ${ORKESTR_OTEL_ENDPOINT:-}
+      ORKESTR_REDIS_URL: redis://redis:6379/0        # shared cache + rate limits across workers
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-2}          # API worker processes (raise on bigger machines)
+      ORKESTR_DB_POOL_SIZE: ${ORKESTR_DB_POOL_SIZE:-10}
     volumes:
       - ./n8n/workflows:/workflows:ro
       - storage:/data/storage
     ports: ["127.0.0.1:8000:8000"]
     depends_on:
       postgres: { condition: service_healthy }
-    mem_limit: 512m
+      redis: { condition: service_healthy }
+    mem_limit: 768m
+
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--maxmemory", "64mb", "--maxmemory-policy", "allkeys-lru", "--save", ""]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 20
+    mem_limit: 96m
 
   n8n-init:
     image: ${N8N_IMAGE:-n8nio/n8n:1.123.92}

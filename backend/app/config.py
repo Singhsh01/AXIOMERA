@@ -56,7 +56,11 @@ class Settings(BaseSettings):
     hubspot_token: str | None = None
 
     # Platform behaviour
-    rate_limit_per_minute: int = 240
+    rate_limit_per_minute: int = 600  # per signed-in user (or per client IP when anonymous)
+    db_pool_size: int = 10
+    db_max_overflow: int = 10
+    cache_ttl_seconds: float = 3.0
+    cache_enabled: bool = True  # disable only to measure the uncached baseline
     retention_days: int = 365
     cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
     otel_enabled: bool = False
