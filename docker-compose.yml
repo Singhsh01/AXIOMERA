@@ -1,0 +1,116 @@
+# Orkestr — local stack, sized for an Apple Silicon laptop with 8 GB RAM.
+#
+#   docker compose up -d --build                         core: postgres, n8n, api, web  (~2 GB)
+#   docker compose --profile observability up -d         + OpenTelemetry collector, Jaeger, Prometheus
+#
+# n8n and the API bind to 127.0.0.1 only; the n8n editor is not exposed beyond this machine.
+name: orkestr
+
+x-n8n-env: &n8n-env
+  N8N_DIAGNOSTICS_ENABLED: "false"
+  N8N_PERSONALIZATION_ENABLED: "false"
+  N8N_VERSION_NOTIFICATIONS_ENABLED: "false"
+  N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"     # workflows read ORKESTR_* via $env
+  NODE_FUNCTION_ALLOW_BUILTIN: "crypto"     # HMAC verification in Code nodes
+  N8N_RUNNERS_ENABLED: "true"
+  N8N_SECURE_COOKIE: "false"                # localhost only; enable behind TLS
+  N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+  N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:-change-me-n8n-encryption-key}
+  WEBHOOK_URL: http://localhost:5678/
+  GENERIC_TIMEZONE: ${TZ:-Europe/Berlin}
+  EXECUTIONS_DATA_PRUNE: "true"
+  EXECUTIONS_DATA_MAX_AGE: "336"
+  ORKESTR_API_URL: http://api:8000
+  ORKESTR_SERVICE_TOKEN: ${ORKESTR_SERVICE_TOKEN:-dev-service-token}
+  ORKESTR_WEBHOOK_SECRET: ${ORKESTR_WEBHOOK_SECRET:-dev-webhook-secret}
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: orkestr
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-orkestr}
+      POSTGRES_DB: orkestr
+    command: ["postgres", "-c", "shared_buffers=128MB", "-c", "max_connections=60"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    ports: ["127.0.0.1:5432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orkestr"]
+      interval: 5s
+      retries: 20
+    mem_limit: 512m
+
+  api:
+    build: ./backend
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      ORKESTR_DATABASE_URL: postgresql+psycopg://orkestr:${POSTGRES_PASSWORD:-orkestr}@postgres:5432/orkestr
+      ORKESTR_N8N_BASE_URL: http://n8n:5678
+      ORKESTR_CORS_ORIGINS: '["http://localhost:3000"]'
+      ORKESTR_OTEL_ENDPOINT: ${ORKESTR_OTEL_ENDPOINT:-}
+    volumes:
+      - ./n8n/workflows:/workflows:ro
+      - storage:/data/storage
+    ports: ["127.0.0.1:8000:8000"]
+    depends_on:
+      postgres: { condition: service_healthy }
+    mem_limit: 512m
+
+  n8n-init:
+    image: ${N8N_IMAGE:-n8nio/n8n:1.123.92}
+    environment: *n8n-env
+    entrypoint: ["/bin/sh", "/bootstrap.sh"]
+    volumes:
+      - n8ndata:/home/node/.n8n
+      - ./n8n/workflows:/workflows:ro
+      - ./n8n/bootstrap.sh:/bootstrap.sh:ro
+    restart: "no"
+
+  n8n:
+    image: ${N8N_IMAGE:-n8nio/n8n:1.123.92}
+    environment: *n8n-env
+    volumes: [n8ndata:/home/node/.n8n]
+    ports: ["127.0.0.1:5678:5678"]
+    depends_on:
+      n8n-init: { condition: service_completed_successfully }
+      api: { condition: service_healthy }
+    mem_limit: 1g
+
+  web:
+    build:
+      context: ./frontend
+      args: { ORKESTR_API_URL: http://api:8000 }
+    environment:
+      ORKESTR_API_URL: http://api:8000
+    ports: ["127.0.0.1:3000:3000"]
+    depends_on:
+      api: { condition: service_healthy }
+    mem_limit: 384m
+
+  # ---------------------------------------------------------------- optional: observability
+  otel-collector:
+    profiles: [observability]
+    image: otel/opentelemetry-collector-contrib:0.116.0
+    command: ["--config=/etc/otel.yml"]
+    volumes: [./infra/otel-collector.yml:/etc/otel.yml:ro]
+    mem_limit: 256m
+
+  jaeger:
+    profiles: [observability]
+    image: jaegertracing/all-in-one:1.64.0
+    ports: ["127.0.0.1:16686:16686"]
+    mem_limit: 384m
+
+  prometheus:
+    profiles: [observability]
+    image: prom/prometheus:v3.1.0
+    volumes: [./infra/prometheus.yml:/etc/prometheus/prometheus.yml:ro]
+    ports: ["127.0.0.1:9090:9090"]
+    mem_limit: 256m
+
+volumes:
+  pgdata:
+  n8ndata:
+  storage:
