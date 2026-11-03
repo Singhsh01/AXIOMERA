@@ -16,16 +16,16 @@ export function EvalResults() {
   const suites = load();
   if (!suites) return <p className="mt-8 text-ink-mute">No evaluation results found. Run <code className="font-mono">make eval</code> to generate them.</p>;
   return (
-    <div className="mt-10 grid gap-4 md:grid-cols-3">
+    <div className="grid border-l border-t border-line md:grid-cols-3">
       {suites.map((s) => (
-        <div key={s.suite} className="glass p-6">
-          <h3 className="font-display text-lg font-semibold">{s.title}</h3>
-          <p className="mt-1 text-xs text-ink-faint">{s.uses_fixtures ? "Deterministic fixtures, no model calls" : `Provider: ${s.provider}`} · {new Date(s.generated_at).toLocaleDateString("en-GB")}</p>
+        <div key={s.suite} className="border-b border-r border-line p-7">
+          <h3 className="font-display text-[18px] font-bold tracking-[-0.015em]">{s.title}</h3>
+          <p className="mt-1 font-mono text-[10.5px] text-ink-mute">{s.uses_fixtures ? "Deterministic fixtures, no model calls" : `Provider: ${s.provider}`} · {new Date(s.generated_at).toLocaleDateString("en-GB")}</p>
           <dl className="mt-5 space-y-3">
             {s.headline.map((h) => (
               <div key={h.label} className="flex items-baseline justify-between gap-4 border-b border-line pb-2.5">
-                <dt className="text-sm text-ink-mute">{h.label}</dt>
-                <dd className="font-display text-xl font-semibold tabular">{h.value}</dd>
+                <dt className="text-[13px] text-ink-mute">{h.label}</dt>
+                <dd className="font-display text-[20px] font-bold tabular">{h.value}</dd>
               </div>
             ))}
           </dl>

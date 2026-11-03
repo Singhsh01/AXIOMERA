@@ -42,8 +42,7 @@ export function HeroTrace() {
       <div className="overflow-x-auto pb-2 [scrollbar-width:none]">
         <svg viewBox="-30 0 1330 230" className="min-w-[860px] w-full" role="img" aria-label="Workflow A execution trace from intake to verification">
           <defs>
-            <linearGradient id="edge" x1="0" x2="1"><stop offset="0" stopColor="#6A5AE0" /><stop offset="1" stopColor="#0E8FA3" /></linearGradient>
-            <filter id="glow"><feGaussianBlur stdDeviation="4" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+            <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0V6" style={{ stroke: "rgb(var(--ink) / 0.18)" }} strokeWidth="1" /></pattern>
           </defs>
           {NODES.slice(1).map((n, i) => {
             const p = NODES[i];
@@ -51,37 +50,37 @@ export function HeroTrace() {
             const lit = i < activeIdx;
             return (
               <g key={n.id}>
-                <path d={d} stroke="rgba(40,52,110,0.16)" strokeWidth="1.5" fill="none" />
-                {lit && <path d={d} stroke="url(#edge)" strokeWidth="2" fill="none" opacity="0.8" />}
-                {i === activeIdx - 1 && <path d={d} stroke="#0E8FA3" strokeWidth="3" fill="none" className="signal" filter="url(#glow)" />}
+                <path d={d} style={{ stroke: "rgb(var(--ink) / 0.16)" }} strokeWidth="1" strokeDasharray="3 4" fill="none" />
+                {lit && <path d={d} style={{ stroke: "rgb(var(--ink) / 0.75)" }} strokeWidth="1.4" fill="none" />}
+                {i === activeIdx - 1 && <path d={d} style={{ stroke: "rgb(var(--accent))" }} strokeWidth="2.5" fill="none" className="signal" />}
               </g>
             );
           })}
           {NODES.map((n, i) => {
             const done = i < activeIdx, active = i === activeIdx;
-            const ring = n.human ? "#C27A12" : active ? "#0E8FA3" : done ? "#6A5AE0" : "rgba(40,52,110,0.26)";
+            const ring = n.human ? "rgb(var(--accent))" : active ? "rgb(var(--ink))" : done ? "rgb(var(--ink) / 0.6)" : "rgb(var(--ink) / 0.22)";
             return (
               <g key={n.id} transform={`translate(${n.x} ${n.y})`}>
-                {active && <circle r="30" fill={n.human ? "rgba(194,122,18,0.12)" : "rgba(14,143,163,0.12)"} className="live-dot" />}
-                <rect x="-22" y="-22" width="44" height="44" rx={n.kind === "trigger" ? 22 : 11} fill="#FFFFFF" stroke={ring} strokeWidth={active ? 2 : 1.4} />
-                {n.human ? <path d="M-6 -2a6 6 0 1 1 12 0v3h-12z M-9 1h18v9h-18z" fill={active ? "#C27A12" : "#596282"} transform="scale(.8)" />
-                  : n.agent ? <circle r="6" fill={done || active ? "url(#edge)" : "#8A92B0"} />
-                  : <rect x="-6" y="-6" width="12" height="12" rx="3" fill={done || active ? "#6A5AE0" : "#8A92B0"} />}
-                <text y={n.y < 120 ? -34 : 42} textAnchor="middle" fill={active ? "#141A33" : "#596282"} fontSize="13" fontFamily="IBM Plex Sans">{n.id}</text>
-                {n.agent && <text y={n.y < 120 ? -50 : 58} textAnchor="middle" fill="#8A92B0" fontSize="11" fontFamily="IBM Plex Sans">{n.agent} agent</text>}
+                {active && <rect x="-30" y="-30" width="60" height="60" style={{ fill: n.human ? "rgb(var(--accent) / 0.14)" : "rgb(var(--ink) / 0.07)" }} className="live-dot" />}
+                <rect x="-20" y="-20" width="40" height="40" rx={n.kind === "trigger" ? 20 : 0} style={{ fill: "rgb(var(--surface))", stroke: ring }} strokeWidth={active ? 2 : 1.2} />
+                {n.human ? <path d="M-6 -2a6 6 0 1 1 12 0v3h-12z M-9 1h18v9h-18z" style={{ fill: active ? "rgb(var(--accent))" : "rgb(var(--ink-mute))" }} transform="scale(.8)" />
+                  : n.agent ? <rect x="-7" y="-7" width="14" height="14" style={{ fill: done || active ? "url(#hatch)" : "transparent", stroke: done || active ? "rgb(var(--ink))" : "rgb(var(--ink) / 0.3)" }} strokeWidth="1" transform="rotate(45)" />
+                  : <rect x="-6" y="-6" width="12" height="12" style={{ fill: done || active ? "rgb(var(--ink))" : "rgb(var(--ink) / 0.25)" }} />}
+                <text y={n.y < 120 ? -34 : 42} textAnchor="middle" style={{ fill: active ? "rgb(var(--ink))" : "rgb(var(--ink-mute))" }} fontSize="13" fontWeight={active ? 700 : 500} fontFamily="Manrope Variable">{n.id}</text>
+                {n.agent && <text y={n.y < 120 ? -50 : 58} textAnchor="middle" style={{ fill: "rgb(var(--ink-faint))" }} fontSize="10" letterSpacing="1.2" fontFamily="IBM Plex Mono">{n.agent.toUpperCase()} AGENT</text>}
               </g>
             );
           })}
         </svg>
       </div>
       <div className="mt-4 grid gap-3 sm:grid-cols-[auto_1fr] sm:items-center">
-        <span className="inline-flex items-center gap-2 text-sm text-ink-mute">
-          <span className={`h-2 w-2 rounded-full ${activeId === "Approval" ? "bg-warn" : "bg-cyan"} live-dot`} />
-          n8n execution 2
+        <span className="label inline-flex items-center gap-2">
+          <span className={`h-1.5 w-1.5 rounded-full ${activeId === "Approval" ? "bg-accent" : "bg-ink"} live-dot`} />
+          n8n execution · workflow A
         </span>
         <motion.p key={step} initial={reduce ? false : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
-          className="font-mono text-[13px] text-ink-soft" aria-live="polite">
-          <span className="text-violet">{activeId}</span>&nbsp;&nbsp;{LOG[Math.min(step, LOG.length - 1)][1]}
+          className="border-l border-line pl-4 font-mono text-[12.5px] text-ink-soft" aria-live="polite">
+          <span className="font-medium text-accent">{activeId}</span>&nbsp;&nbsp;{LOG[Math.min(step, LOG.length - 1)][1]}
         </motion.p>
       </div>
     </div>
