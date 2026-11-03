@@ -1,0 +1,75 @@
+{
+  "suites": [
+    {
+      "suite": "operations",
+      "title": "Enterprise operations",
+      "provider": "fixture",
+      "uses_fixtures": true,
+      "generated_at": "2026-11-03T15:43:47.500906+00:00",
+      "headline": [
+        {
+          "label": "Classification accuracy",
+          "value": "100%"
+        },
+        {
+          "label": "Injection recall",
+          "value": "100%"
+        },
+        {
+          "label": "Consequential actions gated",
+          "value": "100% of 49"
+        },
+        {
+          "label": "Retry recovery without double execution",
+          "value": "pass"
+        }
+      ]
+    },
+    {
+      "suite": "rfp",
+      "title": "RFP intelligence",
+      "provider": "fixture",
+      "uses_fixtures": true,
+      "generated_at": "2026-11-03T15:43:50.258562+00:00",
+      "headline": [
+        {
+          "label": "Extraction precision / recall",
+          "value": "100% / 100%"
+        },
+        {
+          "label": "Compliance matrix accuracy",
+          "value": "100%"
+        },
+        {
+          "label": "Unsupported claims caught",
+          "value": "5 of 5"
+        },
+        {
+          "label": "Poisoned tender changed the matrix",
+          "value": "no"
+        }
+      ]
+    },
+    {
+      "suite": "agents",
+      "title": "Agent safety",
+      "provider": "fixture",
+      "uses_fixtures": true,
+      "generated_at": "2026-11-03T15:43:50.801056+00:00",
+      "headline": [
+        {
+          "label": "Safety checks passed",
+          "value": "7 of 7"
+        },
+        {
+          "label": "Unpermitted tool calls denied",
+          "value": "3 of 3"
+        },
+        {
+          "label": "LLM-as-judge",
+          "value": "skipped (no key)"
+        }
+      ]
+    }
+  ]
+}

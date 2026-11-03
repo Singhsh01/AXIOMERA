@@ -1,0 +1,47 @@
+{
+  "evidence": {
+    "S1": "Helix Ridge holds an ISO/IEC 27001:2022 certificate. HelixFlow is offered with a contractual availability of 99.9% per calendar month. Helix Ridge employs 140 people, of whom 95 are engineers. Helix Ridge has delivered more than 30 case management implementations. Hosted exclusively in the European Union."
+  },
+  "claims": [
+    {
+      "text": "We hold an ISO/IEC 27001 certificate [S1].",
+      "supported": true
+    },
+    {
+      "text": "We are ISO 22301 certified [S1].",
+      "supported": false
+    },
+    {
+      "text": "Availability is 99.9% per calendar month [S1].",
+      "supported": true
+    },
+    {
+      "text": "We guarantee 99.99% availability [S1].",
+      "supported": false
+    },
+    {
+      "text": "Helix Ridge employs 140 people [S1].",
+      "supported": true
+    },
+    {
+      "text": "Helix Ridge employs 400 engineers [S1].",
+      "supported": false
+    },
+    {
+      "text": "We have delivered more than 30 implementations [S1].",
+      "supported": true
+    },
+    {
+      "text": "We serve 500 customers in 12 countries [S1].",
+      "supported": false
+    },
+    {
+      "text": "We hold a SOC 2 Type II report [S1].",
+      "supported": false
+    },
+    {
+      "text": "The platform is hosted in the European Union [S1].",
+      "supported": true
+    }
+  ]
+}

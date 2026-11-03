@@ -1,0 +1,164 @@
+{
+  "document": "seed/rfps/lindenfeld-case-management-rfp.pdf",
+  "labelled_by": "hand-labelled by the project author against the generated tender text",
+  "deadlines": [
+    {
+      "kind": "submission",
+      "date": "2026-12-18"
+    },
+    {
+      "kind": "questions",
+      "date": "2026-12-02"
+    },
+    {
+      "kind": "contract_start",
+      "date": "2027-03-01"
+    }
+  ],
+  "requirements": [
+    {
+      "text": "Proposals must be submitted no later than 18 December 2026, 12:00 via the Lindenfeld e-tender portal.",
+      "obligation": "mandatory",
+      "category": "deadline",
+      "compliance": "unverified"
+    },
+    {
+      "text": "Questions for clarification must be submitted by 2 December 2026.",
+      "obligation": "mandatory",
+      "category": "deadline",
+      "compliance": "unverified"
+    },
+    {
+      "text": "The proposal shall not exceed 40 pages excluding annexes.",
+      "obligation": "mandatory",
+      "category": "submission",
+      "compliance": "unverified"
+    },
+    {
+      "text": "Proposals shall be submitted in PDF format and signed by an authorised representative of the bidder.",
+      "obligation": "mandatory",
+      "category": "submission",
+      "compliance": "unverified"
+    },
+    {
+      "text": "Proposals may be submitted in German or English.",
+      "obligation": "optional",
+      "category": "submission",
+      "compliance": "unverified"
+    },
+    {
+      "text": "TR-01 The solution must support single sign-on via SAML 2.0 or OpenID Connect.",
+      "obligation": "mandatory",
+      "category": "technical",
+      "compliance": "compliant"
+    },
+    {
+      "text": "TR-02 All data must be hosted within the European Union.",
+      "obligation": "mandatory",
+      "category": "technical",
+      "compliance": "compliant"
+    },
+    {
+      "text": "TR-03 The platform shall guarantee an availability of at least 99.95% per calendar month.",
+      "obligation": "mandatory",
+      "category": "technical",
+      "compliance": "partially_compliant"
+    },
+    {
+      "text": "TR-04 Data must be encrypted at rest and in transit using current industry standards.",
+      "obligation": "mandatory",
+      "category": "technical",
+      "compliance": "compliant"
+    },
+    {
+      "text": "TR-05 The supplier must provide an on-premises deployment option for the platform.",
+      "obligation": "mandatory",
+      "category": "technical",
+      "compliance": "non_compliant"
+    },
+    {
+      "text": "TR-06 The solution shall provide a documented REST API for integration with existing municipal systems.",
+      "obligation": "mandatory",
+      "category": "technical",
+      "compliance": "compliant"
+    },
+    {
+      "text": "TR-07 The citizen interface should conform to WCAG 2.1 level AA accessibility.",
+      "obligation": "optional",
+      "category": "technical",
+      "compliance": "compliant"
+    },
+    {
+      "text": "TR-08 The system must keep a complete audit log of all user and administrator actions.",
+      "obligation": "mandatory",
+      "category": "technical",
+      "compliance": "compliant"
+    },
+    {
+      "text": "TR-09 Backups shall be performed with a recovery point objective of no more than 4 hours.",
+      "obligation": "mandatory",
+      "category": "technical",
+      "compliance": "compliant"
+    },
+    {
+      "text": "TR-10 The user interface should be available in German and English.",
+      "obligation": "optional",
+      "category": "technical",
+      "compliance": "compliant"
+    },
+    {
+      "text": "SC-01 The bidder must hold a valid ISO/IEC 27001 certification for the operation of the offered service.",
+      "obligation": "mandatory",
+      "category": "technical",
+      "compliance": "compliant"
+    },
+    {
+      "text": "SC-02 The bidder must provide a current SOC 2 Type II report.",
+      "obligation": "mandatory",
+      "category": "technical",
+      "compliance": "unverified"
+    },
+    {
+      "text": "SC-03 An ISO 22301 business continuity certification is desirable.",
+      "obligation": "optional",
+      "category": "technical",
+      "compliance": "unverified"
+    },
+    {
+      "text": "CO-01 Prices shall be quoted in EUR as a fixed price for implementation and an annual subscription fee.",
+      "obligation": "mandatory",
+      "category": "commercial",
+      "compliance": "unverified"
+    },
+    {
+      "text": "CO-02 Payment terms of 30 days after invoice receipt must be accepted.",
+      "obligation": "mandatory",
+      "category": "commercial",
+      "compliance": "unverified"
+    },
+    {
+      "text": "CT-01 The supplier shall sign the City's data processing agreement in accordance with Article 28 GDPR.",
+      "obligation": "mandatory",
+      "category": "contractual",
+      "compliance": "compliant"
+    },
+    {
+      "text": "CT-02 Professional liability insurance with coverage of at least EUR 5 million is required.",
+      "obligation": "mandatory",
+      "category": "contractual",
+      "compliance": "unverified"
+    },
+    {
+      "text": "Proposals will be evaluated according to the following weighting: quality of the solution 50%, price 30%, references 20%.",
+      "obligation": "informational",
+      "category": "evaluation",
+      "compliance": "unverified"
+    },
+    {
+      "text": "Bidders must attach copies of all certificates referred to in section 4 and at least two reference letters from comparable projects.",
+      "obligation": "mandatory",
+      "category": "attachment",
+      "compliance": "unverified"
+    }
+  ]
+}

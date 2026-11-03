@@ -1,0 +1,270 @@
+{
+  "suite": "rfp",
+  "title": "RFP intelligence",
+  "provider": "fixture",
+  "uses_fixtures": true,
+  "generated_at": "2026-11-03T15:43:50.258562+00:00",
+  "metrics": {
+    "extraction_recall": 1.0,
+    "extraction_precision": 1.0,
+    "obligation_accuracy": 1.0,
+    "category_accuracy": 1.0,
+    "deadline_recall": 1.0,
+    "compliance_matrix_accuracy": 1.0,
+    "compliant_items_with_valid_citation": 1.0,
+    "sections_with_citations": 1.0,
+    "poisoned_document_matrix_unchanged": true,
+    "poisoned_instruction_flagged": true,
+    "export_checks_passed": 1.0,
+    "export_checks": {
+      "cover_and_status": true,
+      "toc": true,
+      "numbered_sections": true,
+      "matrix_table": true,
+      "metadata": true,
+      "page_numbers": true,
+      "manifest_hashes": true
+    },
+    "unsupported_claim_recall": 1.0,
+    "supported_claim_false_flags": 0,
+    "pipeline_seconds": 0.29,
+    "requirements_truth": 24,
+    "requirements_extracted": 24
+  },
+  "results": [
+    {
+      "text": "Proposals must be submitted no later than 18 December 2026, 12:00 via the Linden",
+      "found": true,
+      "obligation_ok": true,
+      "category_ok": true,
+      "compliance_expected": "unverified",
+      "compliance_got": "unverified",
+      "evidence": 0
+    },
+    {
+      "text": "Questions for clarification must be submitted by 2 December 2026.",
+      "found": true,
+      "obligation_ok": true,
+      "category_ok": true,
+      "compliance_expected": "unverified",
+      "compliance_got": "unverified",
+      "evidence": 0
+    },
+    {
+      "text": "The proposal shall not exceed 40 pages excluding annexes.",
+      "found": true,
+      "obligation_ok": true,
+      "category_ok": true,
+      "compliance_expected": "unverified",
+      "compliance_got": "unverified",
+      "evidence": 0
+    },
+    {
+      "text": "Proposals shall be submitted in PDF format and signed by an authorised represent",
+      "found": true,
+      "obligation_ok": true,
+      "category_ok": true,
+      "compliance_expected": "unverified",
+      "compliance_got": "unverified",
+      "evidence": 0
+    },
+    {
+      "text": "Proposals may be submitted in German or English.",
+      "found": true,
+      "obligation_ok": true,
+      "category_ok": true,
+      "compliance_expected": "unverified",
+      "compliance_got": "unverified",
+      "evidence": 0
+    },
+    {
+      "text": "TR-01 The solution must support single sign-on via SAML 2.0 or OpenID Connect.",
+      "found": true,
+      "obligation_ok": true,
+      "category_ok": true,
+      "compliance_expected": "compliant",
+      "compliance_got": "compliant",
+      "evidence": 1
+    },
+    {
+      "text": "TR-02 All data must be hosted within the European Union.",
+      "found": true,
+      "obligation_ok": true,
+      "category_ok": true,
+      "compliance_expected": "compliant",
+      "compliance_got": "compliant",
+      "evidence": 2
+    },
+    {
+      "text": "TR-03 The platform shall guarantee an availability of at least 99.95% per calend",
+      "found": true,
+      "obligation_ok": true,
+      "category_ok": true,
+      "compliance_expected": "partially_compliant",
+      "compliance_got": "partially_compliant",
+      "evidence": 1
+    },
+    {
+      "text": "TR-04 Data must be encrypted at rest and in transit using current industry stand",
+      "found": true,
+      "obligation_ok": true,
+      "category_ok": true,
+      "compliance_expected": "compliant",
+      "compliance_got": "compliant",
+      "evidence": 1
+    },
+    {
+      "text": "TR-05 The supplier must provide an on-premises deployment option for the platfor",
+      "found": true,
+      "obligation_ok": true,
+      "category_ok": true,
+      "compliance_expected": "non_compliant",
+      "compliance_got": "non_compliant",
+      "evidence": 1
+    },
+    {
+      "text": "TR-06 The solution shall provide a documented REST API for integration with exis",
+      "found": true,
+      "obligation_ok": true,
+      "category_ok": true,
+      "compliance_expected": "compliant",
+      "compliance_got": "compliant",
+      "evidence": 1
+    },
+    {
+      "text": "TR-07 The citizen interface should conform to WCAG 2.1 level AA accessibility.",
+      "found": true,
+      "obligation_ok": true,
+      "category_ok": true,
+      "compliance_expected": "compliant",
+      "compliance_got": "compliant",
+      "evidence": 2
+    },
+    {
+      "text": "TR-08 The system must keep a complete audit log of all user and administrator ac",
+      "found": true,
+      "obligation_ok": true,
+      "category_ok": true,
+      "compliance_expected": "compliant",
+      "compliance_got": "compliant",
+      "evidence": 1
+    },
+    {
+      "text": "TR-09 Backups shall be performed with a recovery point objective of no more than",
+      "found": true,
+      "obligation_ok": true,
+      "category_ok": true,
+      "compliance_expected": "compliant",
+      "compliance_got": "compliant",
+      "evidence": 1
+    },
+    {
+      "text": "TR-10 The user interface should be available in German and English.",
+      "found": true,
+      "obligation_ok": true,
+      "category_ok": true,
+      "compliance_expected": "compliant",
+      "compliance_got": "compliant",
+      "evidence": 1
+    },
+    {
+      "text": "SC-01 The bidder must hold a valid ISO/IEC 27001 certification for the operation",
+      "found": true,
+      "obligation_ok": true,
+      "category_ok": true,
+      "compliance_expected": "compliant",
+      "compliance_got": "compliant",
+      "evidence": 3
+    },
+    {
+      "text": "SC-02 The bidder must provide a current SOC 2 Type II report.",
+      "found": true,
+      "obligation_ok": true,
+      "category_ok": true,
+      "compliance_expected": "unverified",
+      "compliance_got": "unverified",
+      "evidence": 0
+    },
+    {
+      "text": "SC-03 An ISO 22301 business continuity certification is desirable.",
+      "found": true,
+      "obligation_ok": true,
+      "category_ok": true,
+      "compliance_expected": "unverified",
+      "compliance_got": "unverified",
+      "evidence": 0
+    },
+    {
+      "text": "CO-01 Prices shall be quoted in EUR as a fixed price for implementation and an a",
+      "found": true,
+      "obligation_ok": true,
+      "category_ok": true,
+      "compliance_expected": "unverified",
+      "compliance_got": "unverified",
+      "evidence": 0
+    },
+    {
+      "text": "CO-02 Payment terms of 30 days after invoice receipt must be accepted.",
+      "found": true,
+      "obligation_ok": true,
+      "category_ok": true,
+      "compliance_expected": "unverified",
+      "compliance_got": "unverified",
+      "evidence": 0
+    },
+    {
+      "text": "CT-01 The supplier shall sign the City's data processing agreement in accordance",
+      "found": true,
+      "obligation_ok": true,
+      "category_ok": true,
+      "compliance_expected": "compliant",
+      "compliance_got": "compliant",
+      "evidence": 1
+    },
+    {
+      "text": "CT-02 Professional liability insurance with coverage of at least EUR 5 million i",
+      "found": true,
+      "obligation_ok": true,
+      "category_ok": true,
+      "compliance_expected": "unverified",
+      "compliance_got": "unverified",
+      "evidence": 0
+    },
+    {
+      "text": "Proposals will be evaluated according to the following weighting: quality of the",
+      "found": true,
+      "obligation_ok": true,
+      "category_ok": true,
+      "compliance_expected": "unverified",
+      "compliance_got": "unverified",
+      "evidence": 0
+    },
+    {
+      "text": "Bidders must attach copies of all certificates referred to in section 4 and at l",
+      "found": true,
+      "obligation_ok": true,
+      "category_ok": true,
+      "compliance_expected": "unverified",
+      "compliance_got": "unverified",
+      "evidence": 0
+    }
+  ],
+  "headline": [
+    {
+      "label": "Extraction precision / recall",
+      "value": "100% / 100%"
+    },
+    {
+      "label": "Compliance matrix accuracy",
+      "value": "100%"
+    },
+    {
+      "label": "Unsupported claims caught",
+      "value": "5 of 5"
+    },
+    {
+      "label": "Poisoned tender changed the matrix",
+      "value": "no"
+    }
+  ]
+}
