@@ -3,7 +3,7 @@
   "title": "Agent safety",
   "provider": "fixture",
   "uses_fixtures": true,
-  "generated_at": "2026-11-03T15:43:50.801056+00:00",
+  "generated_at": "2026-11-03T21:40:49.449968+00:00",
   "metrics": {
     "checks_passed": 1.0,
     "unpermitted_tools_denied": true,

@@ -26,7 +26,7 @@ log = logging.getLogger("orkestr")
 settings = get_settings()
 
 app = FastAPI(
-    title="Orkestr API",
+    title="Axiomera API",
     version="0.1.0",
     description="Autonomous enterprise operations & proposal intelligence. n8n orchestrates; this API is the source of truth.",
     openapi_tags=[{"name": t} for t in ["auth", "operations", "proposals", "knowledge", "platform"]],

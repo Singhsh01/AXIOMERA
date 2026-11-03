@@ -1,6 +1,6 @@
 """n8n orchestration layer.
 
-* The Orkestr API is the source of truth for business state; n8n coordinates *when* and *in
+* The Axiomera API is the source of truth for business state; n8n coordinates *when* and *in
   which order* work happens, with retries, waits, schedules and error workflows.
 * API → n8n: signed webhook calls (HMAC over timestamp + body).
 * n8n → API: HTTP Request nodes authenticated with a service token; each call carries the n8n
