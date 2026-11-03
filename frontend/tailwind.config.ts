@@ -5,11 +5,12 @@ export default {
   theme: {
     extend: {
       colors: {
-        abyss: "#070A14", midnight: "#0E1426", deep: "#131B33",
-        ink: { DEFAULT: "#EEF1FF", soft: "#B8BFDB", mute: "#7A83A6", faint: "#4B5376" },
-        violet: { DEFAULT: "#8B7CFF", deep: "#5B4BD6" }, electric: "#3D7BFF", cyan: "#38E1F0",
-        ok: "#34D399", warn: "#FBBF24", bad: "#FB7185",
-        line: "rgba(139,148,255,0.16)",
+        // Light theme. Token names are historical: abyss = page, midnight = panel, deep = raised surface.
+        abyss: "#F5F6FB", midnight: "#FFFFFF", deep: "#EEF0F8",
+        ink: { DEFAULT: "#141A33", soft: "#3C4466", mute: "#596282", faint: "#737B9A" },
+        violet: { DEFAULT: "#6A5AE0", deep: "#4B3BC4" }, electric: "#2F6BEB", cyan: "#0E8FA3",
+        ok: "#0F8A5C", warn: "#A86412", bad: "#CF3A57",
+        line: "rgba(40,52,110,0.12)",
       },
       fontFamily: {
         display: ['"Bricolage Grotesque Variable"', "ui-sans-serif", "system-ui"],
@@ -18,8 +19,8 @@ export default {
       },
       borderRadius: { panel: "14px" },
       boxShadow: {
-        glow: "0 0 0 1px rgba(139,148,255,0.18), 0 12px 40px -12px rgba(61,123,255,0.25)",
-        lift: "0 24px 60px -24px rgba(0,0,0,0.7)",
+        glow: "0 0 0 1px rgba(106,90,224,0.18), 0 12px 40px -12px rgba(47,107,235,0.22)",
+        lift: "0 20px 50px -24px rgba(20,26,51,0.28)",
       },
     },
   },

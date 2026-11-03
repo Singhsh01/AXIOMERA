@@ -15,7 +15,7 @@ export default function Workflows() {
         {data?.workflows.map((w: any) => {
           const total = Object.values(w.stats as Record<string, number>).reduce((a, b) => a + b, 0);
           return (
-            <Link key={w.key} href={`/app/workflows/${w.key}`} className="focus-ring glass group block p-5 transition-colors hover:bg-white/[0.05]">
+            <Link key={w.key} href={`/app/workflows/${w.key}`} className="focus-ring glass group block p-5 transition-colors hover:bg-ink/[0.05]">
               <div className="flex items-start gap-4">
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-line bg-midnight font-display text-xl font-semibold text-cyan">{w.key}</span>
                 <div className="min-w-0">

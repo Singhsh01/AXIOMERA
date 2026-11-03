@@ -69,7 +69,7 @@ export default function CommandCenter() {
                 return (
                   <div key={l as string}>
                     <div className="mb-1 flex justify-between text-sm"><span className="text-ink-soft">{l}</span><span className="tabular">{v as number}</span></div>
-                    <div className="h-2 rounded-full bg-white/[0.05]"><div className={`h-2 rounded-full ${c}`} style={{ width: `${((v as number) / total) * 100}%` }} /></div>
+                    <div className="h-2 rounded-full bg-ink/[0.05]"><div className={`h-2 rounded-full ${c}`} style={{ width: `${((v as number) / total) * 100}%` }} /></div>
                   </div>
                 );
               })}
@@ -129,7 +129,7 @@ export default function CommandCenter() {
           <PanelTitle hint="Health checks run when this page loads" action={<Link className="text-sm text-cyan hover:underline" href="/app/integrations">Manage</Link>}>Integration health</PanelTitle>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {integ?.map((i: any) => (
-              <div key={i.kind} className="rounded-lg border border-line bg-white/[0.02] p-3">
+              <div key={i.kind} className="rounded-lg border border-line bg-ink/[0.02] p-3">
                 <p className="text-sm font-medium">{i.display_name}</p>
                 <div className="mt-2 flex flex-wrap gap-1.5"><Status value={i.health?.status} /><Badge t={i.effective_mode === "live" ? "ok" : "cyan"}>{i.effective_mode}</Badge></div>
               </div>

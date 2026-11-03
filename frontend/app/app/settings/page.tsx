@@ -1,11 +1,10 @@
 "use client";
-import dynamic from "next/dynamic";
+import { CodeEditor } from "@/components/CodeEditor";
 import { useEffect, useState } from "react";
 import { can, useMe } from "@/components/me";
 import { Badge, Button, ErrorNote, PageHeader, Panel, PanelTitle, Skeleton } from "@/components/ui/primitives";
 import { put, useApi } from "@/lib/api";
 
-const Monaco = dynamic(() => import("@monaco-editor/react"), { ssr: false, loading: () => <Skeleton className="h-[520px]" /> });
 
 export default function Policies() {
   const { data, mutate } = useApi<any>("/policies/approvals");
@@ -29,7 +28,7 @@ export default function Policies() {
       <div className="grid gap-5 xl:grid-cols-[1.5fr_1fr]">
         <Panel className="p-3">
           <div className="overflow-hidden rounded-lg border border-line">
-            {data ? <Monaco height="560px" defaultLanguage="json" theme="vs-dark" value={text} onChange={(v) => { setText(v ?? ""); setSaved(false); }}
+            {data ? <CodeEditor height="560px" defaultLanguage="json" theme="light" value={text} onChange={(v) => { setText(v ?? ""); setSaved(false); }}
               options={{ readOnly: !admin, minimap: { enabled: false }, fontSize: 13, scrollBeyondLastLine: false, tabSize: 2 }} /> : <Skeleton className="h-[560px]" />}
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-3 px-1">

@@ -29,10 +29,10 @@ export default function Landing() {
       <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-8">
         <Logo />
         <nav className="flex items-center gap-1 text-sm">
-          <a href="#flow" className="focus-ring hidden rounded-md px-3 py-2 text-ink-mute hover:text-ink sm:block">How it works</a>
-          <a href="#engines" className="focus-ring hidden rounded-md px-3 py-2 text-ink-mute hover:text-ink sm:block">Product</a>
-          <a href="#trust" className="focus-ring hidden rounded-md px-3 py-2 text-ink-mute hover:text-ink sm:block">Guardrails</a>
-          <Link href="/login" className="focus-ring ml-2 rounded-lg border border-line bg-white/[0.04] px-4 py-2 font-medium hover:bg-white/[0.08]">Sign in</Link>
+          <a href="#flow" className="focus-ring hidden rounded-md px-3 py-2 text-ink-mute hover:text-ink sm:block">Request lifecycle</a>
+          <a href="#engines" className="focus-ring hidden rounded-md px-3 py-2 text-ink-mute hover:text-ink sm:block">Capabilities</a>
+          <a href="#trust" className="focus-ring hidden rounded-md px-3 py-2 text-ink-mute hover:text-ink sm:block">Governance &amp; controls</a>
+          <Link href="/login" className="focus-ring ml-2 rounded-lg border border-line bg-ink/[0.04] px-4 py-2 font-medium hover:bg-ink/[0.08]">Sign in</Link>
         </nav>
       </header>
 
@@ -46,10 +46,10 @@ export default function Landing() {
             recommendation, and waits for an authorised person before anything leaves the building.
           </p>
           <div className="mt-9 flex flex-wrap gap-3">
-            <Link href="/login" className="focus-ring rounded-lg bg-gradient-to-b from-[#9b8dff] to-violet-deep px-5 py-3 font-medium text-white shadow-[0_10px_30px_-10px_rgba(139,124,255,0.8)]">
+            <Link href="/login" className="focus-ring rounded-lg bg-gradient-to-b from-[#7D6EEA] to-violet-deep px-5 py-3 font-medium text-white shadow-[0_10px_30px_-10px_rgba(106,90,224,0.45)]">
               Open the command center
             </Link>
-            <a href="#flow" className="focus-ring rounded-lg border border-line px-5 py-3 font-medium text-ink-soft hover:text-ink">See how a request flows</a>
+            <a href="#flow" className="focus-ring rounded-lg border border-line px-5 py-3 font-medium text-ink-soft hover:text-ink">View the request lifecycle</a>
           </div>
           <div className="glass mt-12 p-5 sm:p-8">
             <HeroTrace />
@@ -57,11 +57,11 @@ export default function Landing() {
         </section>
 
         <section id="flow" className="mx-auto max-w-7xl px-4 py-20 sm:px-8">
-          <h2 className="h-display max-w-3xl text-[36px] font-semibold sm:text-[52px]">What happens between an email arriving and a refund going out</h2>
+          <h2 className="h-display max-w-3xl text-[36px] font-semibold sm:text-[52px]">Request lifecycle: from an inbound email to a verified, approved outcome</h2>
           <ol className="mt-12 grid gap-px overflow-hidden rounded-panel border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
             {FLOW.map(([t, d], i) => (
               <li key={t} className="bg-midnight/95 p-6">
-                <span className="font-display text-[40px] font-semibold leading-none text-transparent [-webkit-text-stroke:1px_rgba(139,148,255,0.45)]">{i + 1}</span>
+                <span className="font-display text-[40px] font-semibold leading-none text-transparent [-webkit-text-stroke:1px_rgba(40,52,110,0.35)]">{i + 1}</span>
                 <h3 className="mt-4 font-display text-xl font-semibold">{t}</h3>
                 <p className="mt-2 text-[15px] leading-relaxed text-ink-mute">{d}</p>
               </li>
@@ -106,7 +106,7 @@ export default function Landing() {
         </section>
 
         <section id="trust" className="mx-auto max-w-7xl px-4 py-20 sm:px-8">
-          <h2 className="h-display max-w-3xl text-[36px] font-semibold sm:text-[48px]">Guardrails that are enforced in code, not in prompts</h2>
+          <h2 className="h-display max-w-3xl text-[36px] font-semibold sm:text-[48px]">Governance &amp; controls enforced in code, not in prompts</h2>
           <dl className="mt-12 grid gap-x-10 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
             {GUARANTEES.map(([t, d]) => (
               <div key={t} className="border-l border-violet/40 pl-5">
@@ -132,7 +132,7 @@ export default function Landing() {
               <h2 className="font-display text-3xl font-semibold tracking-tight">Try it with the demo workspace</h2>
               <p className="mt-2 text-ink-mute">Sign in as an operator, approver or reviewer. All companies, customers and tenders are fictional.</p>
             </div>
-            <Link href="/login" className="focus-ring rounded-lg bg-gradient-to-b from-[#9b8dff] to-violet-deep px-5 py-3 font-medium text-white">Open the command center</Link>
+            <Link href="/login" className="focus-ring rounded-lg bg-gradient-to-b from-[#7D6EEA] to-violet-deep px-5 py-3 font-medium text-white">Open the command center</Link>
           </div>
         </section>
       </main>

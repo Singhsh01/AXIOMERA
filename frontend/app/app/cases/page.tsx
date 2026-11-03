@@ -36,7 +36,7 @@ function NewRequest({ open, onClose, onDone }: { open: boolean; onClose: () => v
       ) : (
         <form onSubmit={submit} className="space-y-4">
           <div className="flex flex-wrap gap-2">
-            {SAMPLES.map((s) => <button type="button" key={s.subject} onClick={() => setF(s)} className="focus-ring rounded-md border border-line px-2.5 py-1 text-xs text-ink-soft hover:bg-white/[0.05]">{s.subject}</button>)}
+            {SAMPLES.map((s) => <button type="button" key={s.subject} onClick={() => setF(s)} className="focus-ring rounded-md border border-line px-2.5 py-1 text-xs text-ink-soft hover:bg-ink/[0.05]">{s.subject}</button>)}
           </div>
           <Field label="From"><input className={inputCls} type="email" required value={f.sender} onChange={(e) => setF({ ...f, sender: e.target.value })} /></Field>
           <Field label="Subject"><input className={inputCls} required value={f.subject} onChange={(e) => setF({ ...f, subject: e.target.value })} /></Field>
@@ -73,7 +73,7 @@ function CaseList() {
           </thead>
           <tbody>
             {data?.map((c) => (
-              <tr key={c.id} className="border-b border-line/60 last:border-0 hover:bg-white/[0.025]">
+              <tr key={c.id} className="border-b border-line/60 last:border-0 hover:bg-ink/[0.025]">
                 <td className="px-4 py-3">
                   <Link href={`/app/cases/${c.id}`} className="focus-ring rounded font-medium hover:text-cyan">
                     <span className="tabular text-ink-mute">#{c.number}</span> {c.title}

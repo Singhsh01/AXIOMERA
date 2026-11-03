@@ -2,15 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Light theme. The variable names match the Tailwind tokens (abyss = page, midnight = panel). */
 :root {
-  --abyss: #070a14;
-  --midnight: #0e1426;
-  --ink: #eef1ff;
-  --violet: #8b7cff;
-  --electric: #3d7bff;
-  --cyan: #38e1f0;
-  --line: rgba(139, 148, 255, 0.16);
-  color-scheme: dark;
+  --abyss: #f5f6fb;
+  --midnight: #ffffff;
+  --ink: #141a33;
+  --violet: #6a5ae0;
+  --electric: #2f6beb;
+  --cyan: #0e8fa3;
+  --line: rgba(40, 52, 110, 0.12);
+  color-scheme: light;
 }
 
 html, body { background: var(--abyss); color: var(--ink); }
@@ -20,18 +21,18 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Ambient field: two soft light sources and a faint grid, fixed behind every page. */
+/* Ambient field: soft pastel light sources and a faint grid, fixed behind every page. */
 .ambient {
   background:
-    radial-gradient(900px 520px at 12% -10%, rgba(91, 75, 214, 0.22), transparent 60%),
-    radial-gradient(800px 500px at 100% 0%, rgba(61, 123, 255, 0.14), transparent 60%),
-    radial-gradient(700px 600px at 70% 110%, rgba(56, 225, 240, 0.07), transparent 60%),
+    radial-gradient(900px 520px at 12% -10%, rgba(106, 90, 224, 0.10), transparent 60%),
+    radial-gradient(800px 500px at 100% 0%, rgba(47, 107, 235, 0.08), transparent 60%),
+    radial-gradient(700px 600px at 70% 110%, rgba(14, 143, 163, 0.06), transparent 60%),
     var(--abyss);
 }
 .gridlines {
   background-image:
-    linear-gradient(rgba(139, 148, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(139, 148, 255, 0.05) 1px, transparent 1px);
+    linear-gradient(rgba(40, 52, 110, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(40, 52, 110, 0.045) 1px, transparent 1px);
   background-size: 56px 56px;
   mask-image: radial-gradient(ellipse at 50% 0%, black 30%, transparent 75%);
 }
@@ -39,15 +40,16 @@ body {
 @layer components {
   .glass {
     @apply rounded-panel border border-line;
-    background: linear-gradient(180deg, rgba(148, 163, 255, 0.07), rgba(148, 163, 255, 0.025));
+    background: rgba(255, 255, 255, 0.82);
+    box-shadow: 0 1px 2px rgba(20, 26, 51, 0.04), 0 8px 24px -16px rgba(20, 26, 51, 0.14);
     backdrop-filter: blur(14px) saturate(1.2);
   }
   .glass-strong {
     @apply rounded-panel border border-line shadow-lift;
-    background: linear-gradient(180deg, rgba(30, 38, 70, 0.92), rgba(16, 22, 42, 0.92));
+    background: rgba(255, 255, 255, 0.97);
     backdrop-filter: blur(18px);
   }
-  .focus-ring { @apply outline-none focus-visible:ring-2 focus-visible:ring-cyan/70 focus-visible:ring-offset-2 focus-visible:ring-offset-abyss; }
+  .focus-ring { @apply outline-none focus-visible:ring-2 focus-visible:ring-violet/60 focus-visible:ring-offset-2 focus-visible:ring-offset-abyss; }
   .tabular { font-variant-numeric: tabular-nums; }
   .h-display { @apply font-display tracking-[-0.035em] leading-[0.95]; }
 }
@@ -58,20 +60,20 @@ body {
 @keyframes pulse-soft { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
 .live-dot { animation: pulse-soft 1.6s ease-in-out infinite; }
 @keyframes shimmer { 100% { transform: translateX(100%); } }
-.skeleton { position: relative; overflow: hidden; background: rgba(148, 163, 255, 0.06); border-radius: 8px; }
+.skeleton { position: relative; overflow: hidden; background: rgba(40, 52, 110, 0.06); border-radius: 8px; }
 .skeleton::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgba(148, 163, 255, 0.08), transparent); animation: shimmer 1.4s infinite; }
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent); animation: shimmer 1.4s infinite; }
 
 @media (prefers-reduced-motion: reduce) {
   .signal, .live-dot, .skeleton::after { animation: none !important; }
   * { scroll-behavior: auto !important; }
 }
 
-::selection { background: rgba(139, 124, 255, 0.35); }
+::selection { background: rgba(106, 90, 224, 0.2); }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-thumb { background: rgba(139, 148, 255, 0.18); border-radius: 10px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb { background: rgba(40, 52, 110, 0.18); border-radius: 10px; border: 2px solid transparent; background-clip: padding-box; }
 
 /* React Flow theming */
 .react-flow__attribution { display: none; }
-.react-flow__edge-path { stroke: rgba(139, 148, 255, 0.35); }
-.react-flow__controls button { background: #131b33; border-color: var(--line); fill: #b8bfdb; }
+.react-flow__edge-path { stroke: rgba(40, 52, 110, 0.3); }
+.react-flow__controls button { background: #ffffff; border-color: var(--line); fill: #3c4466; }

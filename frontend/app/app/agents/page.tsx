@@ -34,7 +34,7 @@ export default function MissionControl() {
           const fails = (a.by_status.failed ?? 0) + (a.by_status.budget_exceeded ?? 0);
           return (
             <button key={a.agent} onClick={() => setAgent(agent === a.agent ? null : a.agent)}
-              className={cn("focus-ring glass p-4 text-left transition-colors", agent === a.agent ? "border-cyan/50 bg-cyan/[0.05]" : "hover:bg-white/[0.04]")}>
+              className={cn("focus-ring glass p-4 text-left transition-colors", agent === a.agent ? "border-cyan/50 bg-cyan/[0.05]" : "hover:bg-ink/[0.04]")}>
               <div className="flex items-center justify-between"><p className="font-medium">{a.agent}</p>{a.by_status.running ? <Badge t="info" dot>running</Badge> : null}</div>
               <p className="mt-0.5 text-xs text-ink-mute">{ROLE[a.agent] ?? "Agent"}</p>
               <div className="mt-3 flex gap-5 text-sm tabular">

@@ -60,7 +60,7 @@ function Timeline() {
           return (
             <div key={r.id} className="grid grid-cols-[9rem_1fr] items-center gap-3 text-xs">
               <span className="truncate text-ink-mute">{r.workflow_key} {r.n8n_execution_id ? `#${r.n8n_execution_id}` : r.trigger}</span>
-              <div className="relative h-5 rounded bg-white/[0.03]">
+              <div className="relative h-5 rounded bg-ink/[0.03]">
                 <span title={`${r.status}, ${ms(r.duration_ms)}`} className={`absolute top-0.5 h-4 rounded ${r.status === "failed" ? "bg-bad/80" : r.status === "waiting" ? "bg-warn/70" : r.status === "running" ? "bg-electric/70" : "bg-violet/80"}`} style={{ left: `${left}%`, width: `${width}%` }} />
               </div>
             </div>

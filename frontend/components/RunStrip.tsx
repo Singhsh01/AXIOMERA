@@ -9,7 +9,7 @@ export function RunStrip({ run }: { run: any }) {
   const steps: any[] = run.steps || [];
   return (
     <Link href={`/app/workflows/${run.workflow_key}?run=${run.id}`}
-      className="focus-ring grid grid-cols-[2.2rem_1fr_auto] items-center gap-3 rounded-lg px-2 py-2 hover:bg-white/[0.04] sm:grid-cols-[2.2rem_12rem_1fr_auto]">
+      className="focus-ring grid grid-cols-[2.2rem_1fr_auto] items-center gap-3 rounded-lg px-2 py-2 hover:bg-ink/[0.04] sm:grid-cols-[2.2rem_12rem_1fr_auto]">
       <span className="grid h-8 w-8 place-items-center rounded-lg border border-line bg-midnight font-display font-semibold text-cyan">{run.workflow_key}</span>
       <span className="min-w-0">
         <span className="block truncate text-sm">{NAMES[run.workflow_key]}</span>

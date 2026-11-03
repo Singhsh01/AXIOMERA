@@ -1,5 +1,5 @@
 "use client";
-import { Bell, BookOpen, Bot, Check, FileText, Gauge, Inbox, LogOut, Menu, PlugZap, Settings, ShieldCheck, Telescope, Workflow, X } from "lucide-react";
+import { Bell, BookOpen, Bot, Check, FileText, Gauge, Inbox, KeyRound, LogOut, Menu, PlugZap, Settings, ShieldCheck, Telescope, Workflow, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -21,6 +21,7 @@ const NAV = [
   { href: "/app/observability", label: "Observability", icon: Telescope },
   { href: "/app/integrations", label: "Integrations", icon: PlugZap },
   { href: "/app/settings", label: "Policies", icon: Settings },
+  { href: "/app/access", label: "Access log", icon: KeyRound },
 ];
 
 function Notifications() {
@@ -29,7 +30,7 @@ function Notifications() {
   const unread = (data || []).filter((n) => !n.read).length;
   return (
     <div className="relative">
-      <button aria-label={`Notifications, ${unread} unread`} onClick={() => setOpen(!open)} className="focus-ring relative rounded-lg p-2 text-ink-soft hover:bg-white/[0.06]">
+      <button aria-label={`Notifications, ${unread} unread`} onClick={() => setOpen(!open)} className="focus-ring relative rounded-lg p-2 text-ink-soft hover:bg-ink/[0.06]">
         <Bell className="h-[18px] w-[18px]" />
         {unread > 0 && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-cyan" />}
       </button>
@@ -38,7 +39,7 @@ function Notifications() {
           <div className="max-h-[420px] overflow-auto">
             {(data || []).slice(0, 15).map((n) => (
               <Link key={n.id} href={n.link || "#"} onClick={() => { setOpen(false); post(`/notifications/${n.id}/read`).then(() => mutate()); }}
-                className={cn("block rounded-lg px-3 py-2.5 hover:bg-white/[0.05]", !n.read && "bg-white/[0.03]")}>
+                className={cn("block rounded-lg px-3 py-2.5 hover:bg-ink/[0.05]", !n.read && "bg-ink/[0.03]")}>
                 <span className="flex items-center gap-2 text-sm font-medium">
                   <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", n.severity === "critical" ? "bg-bad" : n.severity === "warning" ? "bg-warn" : "bg-electric")} />
                   <span className="line-clamp-1">{n.title}</span>
@@ -69,7 +70,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         return (
           <Link key={href} href={href} onClick={() => setMobile(false)}
             className={cn("focus-ring flex items-center gap-3 rounded-lg px-3 py-2 text-[14px] transition-colors",
-              active ? "bg-gradient-to-r from-violet/20 to-transparent text-ink" : "text-ink-mute hover:bg-white/[0.04] hover:text-ink")}>
+              active ? "bg-gradient-to-r from-violet/20 to-transparent text-ink" : "text-ink-mute hover:bg-ink/[0.04] hover:text-ink")}>
             <Icon className={cn("h-[17px] w-[17px]", active ? "text-cyan" : "")} aria-hidden />
             {label}
           </Link>
@@ -95,7 +96,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   <p className="text-sm text-ink">{me.name}</p>
                   <p className="capitalize">{me.role} · {me.workspace.name}</p>
                 </div>
-                <button aria-label="Sign out" className="focus-ring rounded-md p-1.5 hover:bg-white/[0.06]" onClick={async () => { await post("/auth/logout"); router.push("/login"); }}>
+                <button aria-label="Sign out" className="focus-ring rounded-md p-1.5 hover:bg-ink/[0.06]" onClick={async () => { await post("/auth/logout"); router.push("/login"); }}>
                   <LogOut className="h-4 w-4" />
                 </button>
               </div>
@@ -104,7 +105,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </aside>
 
         {mobile && (
-          <div className="fixed inset-0 z-40 bg-black/60 lg:hidden" onClick={() => setMobile(false)}>
+          <div className="fixed inset-0 z-40 bg-ink/30 lg:hidden" onClick={() => setMobile(false)}>
             <div className="glass-strong h-full w-72 rounded-none p-4" onClick={(e) => e.stopPropagation()}>
               <div className="mb-6 flex items-center justify-between"><Logo /><button aria-label="Close menu" onClick={() => setMobile(false)}><X className="h-5 w-5" /></button></div>
               {nav}
@@ -120,7 +121,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               {me && <Badge t="violet" className="capitalize">{me.role}</Badge>}
             </div>
             <div className="flex items-center gap-1">
-              <Link href="/app/approvals" className="focus-ring hidden items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-ink-soft hover:bg-white/[0.06] sm:flex">
+              <Link href="/app/approvals" className="focus-ring hidden items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-ink-soft hover:bg-ink/[0.06] sm:flex">
                 <Check className="h-4 w-4" /> Approvals
               </Link>
               <Notifications />

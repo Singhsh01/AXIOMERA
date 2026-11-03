@@ -33,7 +33,7 @@ function SourceViewer({ rfp, req }: { rfp: any; req: any | null }) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={`/api/v1/rfps/${rfp.id}/documents/${doc.id}/pages/${page}.png`} alt={`Page ${page} of ${doc.filename}`} className="w-full" />
           {hl?.page === page && hl.rects.map((r: any, i: number) => (
-            <span key={i} className="absolute rounded-sm bg-[#8B7CFF]/25 ring-2 ring-[#8B7CFF]" style={{ left: `${r.x * 100 - 0.5}%`, top: `${r.y * 100 - 0.3}%`, width: `${r.w * 100 + 1}%`, height: `${r.h * 100 + 0.6}%` }} />
+            <span key={i} className="absolute rounded-sm bg-[#6A5AE0]/25 ring-2 ring-[#6A5AE0]" style={{ left: `${r.x * 100 - 0.5}%`, top: `${r.y * 100 - 0.3}%`, width: `${r.w * 100 + 1}%`, height: `${r.h * 100 + 0.6}%` }} />
           ))}
         </div>
       ) : <p className="p-4 text-sm text-ink-mute">DOCX files are shown as extracted text; page references are logical pages.</p>}
@@ -62,7 +62,7 @@ function Matrix({ rfp, onSelect, selected }: { rfp: any; onSelect: (r: any) => v
       <Panel className="p-0">
         <div className="flex flex-wrap gap-1.5 border-b border-line p-3">
           {["all", ...STATUSES, "technical", "commercial", "contractual", "submission"].map((f) => (
-            <button key={f} onClick={() => setFilter(f)} className={cn("focus-ring rounded-md px-2.5 py-1 text-xs", filter === f ? "bg-violet/20 text-ink" : "text-ink-mute hover:bg-white/[0.05]")}>
+            <button key={f} onClick={() => setFilter(f)} className={cn("focus-ring rounded-md px-2.5 py-1 text-xs", filter === f ? "bg-violet/20 text-ink" : "text-ink-mute hover:bg-ink/[0.05]")}>
               {human(f)}{STATUSES.includes(f) && reqs ? ` ${reqs.filter((r) => (r.compliance?.status ?? "unverified") === f).length}` : ""}
             </button>
           ))}
@@ -72,7 +72,7 @@ function Matrix({ rfp, onSelect, selected }: { rfp: any; onSelect: (r: any) => v
             <thead className="sticky top-0 bg-midnight text-left text-[12px] text-ink-mute"><tr>{["ID", "Requirement", "Type", "Src", "Status"].map((h) => <th key={h} className="px-3 py-2 font-medium">{h}</th>)}</tr></thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.id} onClick={() => onSelect(r)} className={cn("cursor-pointer border-t border-line/60", sel?.id === r.id ? "bg-violet/10" : "hover:bg-white/[0.03]")}>
+                <tr key={r.id} onClick={() => onSelect(r)} className={cn("cursor-pointer border-t border-line/60", sel?.id === r.id ? "bg-violet/10" : "hover:bg-ink/[0.03]")}>
                   <td className="whitespace-nowrap px-3 py-2.5 font-mono text-xs text-ink-mute">{r.code}</td>
                   <td className="px-3 py-2.5"><p className="line-clamp-2">{r.text}</p>{r.human_verified && <Badge t="violet" className="mt-1">corrected by a person</Badge>}</td>
                   <td className="px-3 py-2.5 text-xs"><p className={r.obligation === "mandatory" ? "text-ink" : "text-ink-mute"}>{r.obligation}</p><p className="text-ink-faint">{r.category}</p></td>

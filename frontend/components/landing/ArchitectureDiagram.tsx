@@ -19,15 +19,15 @@ export function ArchitectureDiagram() {
       <svg viewBox="0 0 1160 370" className="min-w-[760px] w-full" role="img" aria-label="Architecture: event sources call n8n, n8n calls the Orkestr API, which uses the agent runtime, PostgreSQL and connectors; the web app reads the API.">
         {EDGES.map(([d, live], i) => (
           <g key={i}>
-            <path d={d} stroke="rgba(139,148,255,0.3)" strokeWidth="1.4" fill="none" />
-            {live && <path d={d} stroke="#38E1F0" strokeWidth="2.5" fill="none" className="signal" style={{ animationDelay: `${i * 0.35}s` }} />}
+            <path d={d} stroke="rgba(40,52,110,0.26)" strokeWidth="1.4" fill="none" />
+            {live && <path d={d} stroke="#0E8FA3" strokeWidth="2.5" fill="none" className="signal" style={{ animationDelay: `${i * 0.35}s` }} />}
           </g>
         ))}
         {BOX.map((b) => (
           <g key={b.id}>
-            <rect x={b.x} y={b.y} width={b.w} height={b.h} rx="12" fill="#0E1426" stroke={b.id === "api" ? "#8B7CFF" : "rgba(139,148,255,0.25)"} />
-            <text x={b.x + 16} y={b.y + 30} fill="#EEF1FF" fontSize="16" fontFamily="Bricolage Grotesque Variable" fontWeight="600">{b.title}</text>
-            {b.lines.map((l, i) => <text key={l} x={b.x + 16} y={b.y + 56 + i * 22} fill="#7A83A6" fontSize="13" fontFamily="IBM Plex Sans">{l}</text>)}
+            <rect x={b.x} y={b.y} width={b.w} height={b.h} rx="12" fill="#FFFFFF" stroke={b.id === "api" ? "#6A5AE0" : "rgba(40,52,110,0.2)"} />
+            <text x={b.x + 16} y={b.y + 30} fill="#141A33" fontSize="16" fontFamily="Bricolage Grotesque Variable" fontWeight="600">{b.title}</text>
+            {b.lines.map((l, i) => <text key={l} x={b.x + 16} y={b.y + 56 + i * 22} fill="#596282" fontSize="13" fontFamily="IBM Plex Sans">{l}</text>)}
           </g>
         ))}
       </svg>

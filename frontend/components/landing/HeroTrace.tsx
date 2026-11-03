@@ -42,7 +42,7 @@ export function HeroTrace() {
       <div className="overflow-x-auto pb-2 [scrollbar-width:none]">
         <svg viewBox="-30 0 1330 230" className="min-w-[860px] w-full" role="img" aria-label="Workflow A execution trace from intake to verification">
           <defs>
-            <linearGradient id="edge" x1="0" x2="1"><stop offset="0" stopColor="#8B7CFF" /><stop offset="1" stopColor="#38E1F0" /></linearGradient>
+            <linearGradient id="edge" x1="0" x2="1"><stop offset="0" stopColor="#6A5AE0" /><stop offset="1" stopColor="#0E8FA3" /></linearGradient>
             <filter id="glow"><feGaussianBlur stdDeviation="4" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
           </defs>
           {NODES.slice(1).map((n, i) => {
@@ -51,24 +51,24 @@ export function HeroTrace() {
             const lit = i < activeIdx;
             return (
               <g key={n.id}>
-                <path d={d} stroke="rgba(139,148,255,0.18)" strokeWidth="1.5" fill="none" />
+                <path d={d} stroke="rgba(40,52,110,0.16)" strokeWidth="1.5" fill="none" />
                 {lit && <path d={d} stroke="url(#edge)" strokeWidth="2" fill="none" opacity="0.8" />}
-                {i === activeIdx - 1 && <path d={d} stroke="#38E1F0" strokeWidth="3" fill="none" className="signal" filter="url(#glow)" />}
+                {i === activeIdx - 1 && <path d={d} stroke="#0E8FA3" strokeWidth="3" fill="none" className="signal" filter="url(#glow)" />}
               </g>
             );
           })}
           {NODES.map((n, i) => {
             const done = i < activeIdx, active = i === activeIdx;
-            const ring = n.human ? "#FBBF24" : active ? "#38E1F0" : done ? "#8B7CFF" : "rgba(139,148,255,0.3)";
+            const ring = n.human ? "#C27A12" : active ? "#0E8FA3" : done ? "#6A5AE0" : "rgba(40,52,110,0.26)";
             return (
               <g key={n.id} transform={`translate(${n.x} ${n.y})`}>
-                {active && <circle r="30" fill={n.human ? "rgba(251,191,36,0.12)" : "rgba(56,225,240,0.12)"} className="live-dot" />}
-                <rect x="-22" y="-22" width="44" height="44" rx={n.kind === "trigger" ? 22 : 11} fill="#0E1426" stroke={ring} strokeWidth={active ? 2 : 1.4} />
-                {n.human ? <path d="M-6 -2a6 6 0 1 1 12 0v3h-12z M-9 1h18v9h-18z" fill={active ? "#FBBF24" : "#7A83A6"} transform="scale(.8)" />
-                  : n.agent ? <circle r="6" fill={done || active ? "url(#edge)" : "#4B5376"} />
-                  : <rect x="-6" y="-6" width="12" height="12" rx="3" fill={done || active ? "#8B7CFF" : "#4B5376"} />}
-                <text y={n.y < 120 ? -34 : 42} textAnchor="middle" fill={active ? "#EEF1FF" : "#7A83A6"} fontSize="13" fontFamily="IBM Plex Sans">{n.id}</text>
-                {n.agent && <text y={n.y < 120 ? -50 : 58} textAnchor="middle" fill="#4B5376" fontSize="11" fontFamily="IBM Plex Sans">{n.agent} agent</text>}
+                {active && <circle r="30" fill={n.human ? "rgba(194,122,18,0.12)" : "rgba(14,143,163,0.12)"} className="live-dot" />}
+                <rect x="-22" y="-22" width="44" height="44" rx={n.kind === "trigger" ? 22 : 11} fill="#FFFFFF" stroke={ring} strokeWidth={active ? 2 : 1.4} />
+                {n.human ? <path d="M-6 -2a6 6 0 1 1 12 0v3h-12z M-9 1h18v9h-18z" fill={active ? "#C27A12" : "#596282"} transform="scale(.8)" />
+                  : n.agent ? <circle r="6" fill={done || active ? "url(#edge)" : "#8A92B0"} />
+                  : <rect x="-6" y="-6" width="12" height="12" rx="3" fill={done || active ? "#6A5AE0" : "#8A92B0"} />}
+                <text y={n.y < 120 ? -34 : 42} textAnchor="middle" fill={active ? "#141A33" : "#596282"} fontSize="13" fontFamily="IBM Plex Sans">{n.id}</text>
+                {n.agent && <text y={n.y < 120 ? -50 : 58} textAnchor="middle" fill="#8A92B0" fontSize="11" fontFamily="IBM Plex Sans">{n.agent} agent</text>}
               </g>
             );
           })}

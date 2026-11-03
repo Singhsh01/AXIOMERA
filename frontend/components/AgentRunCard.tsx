@@ -47,7 +47,7 @@ export function AgentRunCard({ run, defaultOpen = false }: { run: any; defaultOp
               {[["Tool calls", run.tool_calls?.length ?? 0, budget.max_tool_calls], ["Tokens", tokens, budget.max_tokens], ["Cost $", run.cost_usd ?? 0, budget.max_cost_usd]].map(([l, v, m]) => (
                 <div key={l as string} className="rounded-lg border border-line p-2">
                   <p className="text-ink-mute">{l}</p><p className="tabular text-ink">{v as number} / {m as number}</p>
-                  <div className="mt-1 h-1 rounded bg-white/5"><div className="h-1 rounded bg-gradient-to-r from-violet to-cyan" style={{ width: `${Math.min(100, ((v as number) / ((m as number) || 1)) * 100)}%` }} /></div>
+                  <div className="mt-1 h-1 rounded bg-ink/5"><div className="h-1 rounded bg-gradient-to-r from-violet to-cyan" style={{ width: `${Math.min(100, ((v as number) / ((m as number) || 1)) * 100)}%` }} /></div>
                 </div>
               ))}
             </div>

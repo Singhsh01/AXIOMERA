@@ -24,7 +24,7 @@ function Approvals() {
           {!rows && <Skeleton className="h-60" />}
           {rows && !rows.length && <Empty title={tab === "pending" ? "Nothing is waiting on you" : "No decisions yet"} body="New approvals appear when an agent proposes a consequential action." />}
           {rows?.map((a) => (
-            <button key={a.id} onClick={() => setSel(a.id)} className={cn("focus-ring glass block w-full p-4 text-left transition-colors", current?.id === a.id ? "border-violet/50 bg-violet/[0.06]" : "hover:bg-white/[0.04]")}>
+            <button key={a.id} onClick={() => setSel(a.id)} className={cn("focus-ring glass block w-full p-4 text-left transition-colors", current?.id === a.id ? "border-violet/50 bg-violet/[0.06]" : "hover:bg-ink/[0.04]")}>
               <div className="flex items-start justify-between gap-3">
                 <p className="font-medium">{a.summary}</p>
                 <Badge t={a.risk_level === "critical" ? "bad" : a.risk_level === "high" ? "warn" : "info"}>{a.risk_level}</Badge>

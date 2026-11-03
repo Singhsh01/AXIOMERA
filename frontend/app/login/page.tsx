@@ -56,7 +56,7 @@ function LoginForm() {
             <div className="grid gap-2 sm:grid-cols-2">
               {DEMO.map(([e, n, r, d]) => (
                 <button key={e} type="button" onClick={() => { setEmail(e); setPassword("orkestr-demo"); }}
-                  className={`focus-ring rounded-lg border px-3 py-2 text-left transition-colors ${email === e ? "border-violet/60 bg-violet/10" : "border-line hover:bg-white/[0.04]"}`}>
+                  className={`focus-ring rounded-lg border px-3 py-2 text-left transition-colors ${email === e ? "border-violet/60 bg-violet/10" : "border-line hover:bg-ink/[0.04]"}`}>
                   <span className="block text-sm font-medium">{n} <span className="text-ink-mute">· {r}</span></span>
                   <span className="block text-xs text-ink-faint">{d}</span>
                 </button>

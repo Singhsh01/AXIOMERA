@@ -34,7 +34,7 @@ export default function Rfps() {
         {data?.map((r) => {
           const total = ORDER.reduce((a, k) => a + (r.compliance[k] ?? 0), 0) || 1;
           return (
-            <Link key={r.id} href={`/app/rfps/${r.id}`} className="focus-ring glass grid gap-4 p-5 transition-colors hover:bg-white/[0.04] md:grid-cols-[1.4fr_1fr_auto] md:items-center">
+            <Link key={r.id} href={`/app/rfps/${r.id}`} className="focus-ring glass grid gap-4 p-5 transition-colors hover:bg-ink/[0.04] md:grid-cols-[1.4fr_1fr_auto] md:items-center">
               <div className="min-w-0">
                 <p className="truncate font-display text-lg font-semibold">{r.title}</p>
                 <p className="text-sm text-ink-mute">{r.issuer ?? "Unknown issuer"}{r.reference && `, ref. ${r.reference}`} · uploaded {ago(r.created_at)}</p>
@@ -43,7 +43,7 @@ export default function Rfps() {
               </div>
               <div>
                 <p className="mb-1.5 text-xs text-ink-mute">{r.requirements} requirements</p>
-                <div className="flex h-2 overflow-hidden rounded-full bg-white/5" role="img" aria-label={ORDER.map((k) => `${r.compliance[k] ?? 0} ${k}`).join(", ")}>
+                <div className="flex h-2 overflow-hidden rounded-full bg-ink/5" role="img" aria-label={ORDER.map((k) => `${r.compliance[k] ?? 0} ${k}`).join(", ")}>
                   {ORDER.map((k) => <span key={k} className={`${COLOR[k]} h-full border-r-2 border-midnight last:border-0`} style={{ width: `${((r.compliance[k] ?? 0) / total) * 100}%` }} />)}
                 </div>
                 <p className="mt-1.5 text-xs text-ink-mute">{ORDER.filter((k) => r.compliance[k]).map((k) => `${r.compliance[k]} ${k.replace("_", " ")}`).join(", ") || "Not assessed yet"}</p>

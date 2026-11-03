@@ -10,9 +10,9 @@ const buttonStyles = cva(
   {
     variants: {
       variant: {
-        primary: "bg-gradient-to-b from-[#9b8dff] to-violet-deep text-white shadow-[0_8px_24px_-8px_rgba(139,124,255,0.7)] hover:from-[#a99dff]",
-        secondary: "border border-line bg-white/[0.04] text-ink hover:bg-white/[0.08]",
-        ghost: "text-ink-soft hover:bg-white/[0.06] hover:text-ink",
+        primary: "bg-gradient-to-b from-[#7D6EEA] to-violet-deep text-white shadow-[0_8px_24px_-8px_rgba(106,90,224,0.4)] hover:from-[#8A7CF0]",
+        secondary: "border border-line bg-ink/[0.04] text-ink hover:bg-ink/[0.08]",
+        ghost: "text-ink-soft hover:bg-ink/[0.06] hover:text-ink",
         danger: "border border-bad/30 bg-bad/10 text-bad hover:bg-bad/20",
         success: "border border-ok/30 bg-ok/10 text-ok hover:bg-ok/20",
       },
@@ -52,9 +52,9 @@ const tone: Record<string, string> = {
   ok: "border-ok/25 bg-ok/10 text-ok",
   warn: "border-warn/25 bg-warn/10 text-warn",
   bad: "border-bad/25 bg-bad/10 text-bad",
-  info: "border-electric/30 bg-electric/10 text-[#8fb3ff]",
-  violet: "border-violet/30 bg-violet/10 text-[#b9b0ff]",
-  muted: "border-line bg-white/[0.03] text-ink-mute",
+  info: "border-electric/30 bg-electric/10 text-electric",
+  violet: "border-violet/30 bg-violet/10 text-violet-deep",
+  muted: "border-line bg-ink/[0.03] text-ink-mute",
   cyan: "border-cyan/25 bg-cyan/10 text-cyan",
 };
 
@@ -152,7 +152,7 @@ export function Modal({ open, onClose, title, children, wide }: { open: boolean;
   }, [open, onClose]);
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 backdrop-blur-sm sm:items-center" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/30 p-4 backdrop-blur-sm sm:items-center" onClick={onClose}>
       <div role="dialog" aria-modal aria-label={title} onClick={(e) => e.stopPropagation()}
         className={cn("glass-strong max-h-[90vh] w-full overflow-auto p-6", wide ? "max-w-3xl" : "max-w-lg")}>
         <h2 className="mb-4 font-display text-xl font-semibold">{title}</h2>
@@ -176,7 +176,7 @@ export function PageHeader({ title, sub, actions }: { title: string; sub?: React
 
 export function JsonBlock({ value, className }: { value: unknown; className?: string }) {
   return (
-    <pre className={cn("max-h-80 overflow-auto rounded-lg border border-line bg-abyss/70 p-3 font-mono text-[12px] leading-5 text-ink-soft", className)}>
+    <pre className={cn("max-h-80 min-w-0 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-line bg-abyss/70 p-3 font-mono text-[12px] leading-5 text-ink-soft", className)}>
       {JSON.stringify(value, null, 2)}
     </pre>
   );
