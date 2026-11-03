@@ -8,7 +8,7 @@
 
 | Layer | Result |
 |---|---|
-| End-to-end use cases (`python qa/e2e.py`) | **17 / 17 pass** (after fixes below); raw output in [`qa/results.json`](../qa/results.json), evidence in [`qa/screens`](../qa/screens) |
+| End-to-end use cases (`python qa/e2e.py --theme light\|dark`) | **18 / 18 pass in the light theme and 18 / 18 in the dark theme** (after fixes below); raw output in [`qa/results-light.json`](../qa/results-light.json) and [`qa/results-dark.json`](../qa/results-dark.json), evidence for both themes in [`qa/screens`](../qa/screens) |
 | Backend suite (`cd backend && pytest`) | **81 / 81 pass** |
 | Page renders checked for console and server errors | 55 (11 pages × 5 roles), 0 errors |
 | Load test | 500 concurrent users 100 % success, p95 48–84 ms; 1,000–2,000 users 99.9 % success with graceful degradation on a 2-vCPU box ([details](scalability.md)) |
@@ -34,6 +34,7 @@
 | UC-10 | Audit hash chain verifies end to end | admin | pass | `valid: true` |
 | UX-01 | Landing: stakeholder navigation, no horizontal scroll at 390 px | anonymous | pass | `ux-01-*` |
 | UX-02 | App shell fits a 390 px phone | operator | pass | `ux-02-app-mobile` |
+| UX-03 | Theme switch: light ↔ dark, persists across navigation and reload, heading moves 0 px | operator | pass | `ux-03-theme-*` |
 
 ## Defects found and fixed
 
@@ -49,9 +50,25 @@
 
 Test-script defects (not product defects) were fixed along the way: ambiguous selectors (Next.js route announcer also has `role=alert`; "Approve" matched list items), and API field names (`security_flags` is a list, the case is nested under `approval.case`).
 
+## Redesign regression (Axiomera rebrand, light "Travertine" theme)
+
+The full suite was re-run in both themes after the rebrand and redesign, along with the backend suite (81 / 81), the evaluation suites (unchanged results; only timestamps moved) and a TypeScript check. The landing page was also captured at 1440, 820 and 390 px in both themes.
+
+| # | Severity | Finding | Fix |
+|---|---|---|---|
+| R-1 | Medium | Light tokens `ink-faint`, `accent` and `warn` measured 4.1–4.5:1 on stone surfaces; the dark primary button had white on violet at 3.3:1 | Tokens adjusted; every text token is now ≥ 5.0:1 in both themes, button text 17.2:1 / 5.5:1 (table in [design-system.md](design-system.md)) |
+| R-2 | Medium | On phones the hero copy sat on the busiest part of the render | Full-strength ivory veil below `md`; the gradient veil applies from tablet up |
+| R-3 | Low | At 820 px the landing nav wrapped onto two lines | Section links show from `lg`; header items no longer wrap |
+| R-4 | Low | Every dark-theme chapter reused the same image | Night-graded variants of each render |
+| T-1 | Test | The suite's own re-logins tripped the product's login throttle (10 / min per e-mail) in the second run | Harness reuses one session per user, as a real browser would |
+| T-2 | Test | UC-04 raced the requirements table because the new title block shows "Requirements" before the matrix loads | Waits for table rows instead |
+
+Landing weight (light, scrolled to the end): 152 kB first-load JS, 354 kB images; images for the inactive theme are not downloaded. App routes grew by about 3 kB.
+
 ## Not covered / known limits
 
 - Cross-browser: Chromium only (Playwright's bundled browser). Safari and Firefox were not run.
+- `next lint` is not configured in this repository (it prompts to set up ESLint); type safety is checked with `tsc --noEmit`.
 - Accessibility: keyboard focus rings and labels were checked where tests used them (`get_by_label`, roles); no full WCAG audit was done.
 - Live third-party connectors (Slack, Jira, HubSpot, payments) were exercised against the labelled simulators only.
 - The load test ran the generator on the same 2-vCPU host as the server; see [scalability.md](scalability.md) for how to read the 1,000+ user numbers.

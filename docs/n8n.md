@@ -1,4 +1,4 @@
-# n8n in Orkestr
+# n8n in Axiomera
 
 ## Why n8n is central
 
@@ -45,10 +45,10 @@ Workflow C is triggered by the API when a document is uploaded. To accept tender
 
 n8n is distributed under the **Sustainable Use License**, not an OSI open-source licence. The licence text says: *"You may use or modify the software only for your own internal business purposes or for non-commercial or personal use"* and *"You may distribute the software or provide it to others only if you do so free of charge for non-commercial purposes."* n8n's documentation adds that making n8n available to your customers (for example so they can connect their own accounts and build workflows) falls outside internal use and needs a separate commercial agreement (license@n8n.io).
 
-What that means for Orkestr (not legal advice — check the current licence and talk to n8n before commercialising):
+What that means for Axiomera (not legal advice — check the current licence and talk to n8n before commercialising):
 
-- Running Orkestr inside your own organisation, as a portfolio project or for non-commercial use: covered.
-- Selling Orkestr or hosting it for paying customers with n8n bundled as its orchestrator: requires a commercial licence from n8n (or replacing n8n with an orchestrator under a different licence, which the API-owns-state design makes feasible).
-- Orkestr's own code is MIT-licensed; that does not change n8n's terms.
+- Running Axiomera inside your own organisation, as a portfolio project or for non-commercial use: covered.
+- Selling Axiomera or hosting it for paying customers with n8n bundled as its orchestrator: requires a commercial licence from n8n (or replacing n8n with an orchestrator under a different licence, which the API-owns-state design makes feasible).
+- Axiomera's own code is MIT-licensed; that does not change n8n's terms.
 
 Sources: [Sustainable Use License](https://docs.n8n.io/n8n-community-license/sustainable-use-license), [faircode licence overview](https://docs.n8n.io/faircode-license).

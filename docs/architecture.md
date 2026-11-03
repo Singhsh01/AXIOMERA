@@ -5,7 +5,7 @@
 | Layer | Owns | Never does |
 |---|---|---|
 | **n8n** | When things happen: webhook intake, ordering of stages, retries with back-off, waiting for humans (Wait node), schedules, error workflow, fan-out to sub-workflows | Holds business state, decides policy, talks to Jira/Slack directly |
-| **Orkestr API** | What is true: cases, approvals, RFPs, requirements, proposals, audit, idempotency, policy, connectors, agents | Long waits or schedules (it hands those to n8n) |
+| **Axiomera API** | What is true: cases, approvals, RFPs, requirements, proposals, audit, idempotency, policy, connectors, agents | Long waits or schedules (it hands those to n8n) |
 | **Agent runtime** | Bounded, observable model/tool use inside an API request | Executes consequential actions without an approval whose scope hash matches |
 | **Web app** | Human decisions and inspection | Talks to n8n directly |
 
@@ -31,7 +31,7 @@ app/routers      HTTP layer only; maps domain errors to retry semantics (503 = t
 sequenceDiagram
   participant Src as Email bridge
   participant A as n8n Workflow A
-  participant API as Orkestr API
+  participant API as Axiomera API
   participant E as n8n Workflow E
   participant Human as Approver (web)
   participant Pay as Payments connector

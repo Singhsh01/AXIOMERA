@@ -1,8 +1,13 @@
-# Orkestr
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/media/axiomera-wordmark-dark.svg">
+  <img src="docs/media/axiomera-wordmark-light.svg" alt="Axiomera" width="300">
+</picture>
 
-**n8n-orchestrated AI agents for enterprise case handling and tender responses — with a human approval in front of every consequential action.**
+**Autonomous Enterprise Operations & Proposal Intelligence Platform**
 
-Orkestr combines two business engines on one control plane:
+n8n-orchestrated AI agents for enterprise case handling and tender responses, with a human approval in front of every consequential action.
+
+Axiomera combines two business engines on one control plane:
 
 - **Enterprise operations** — signed email/portal/monitoring events become cases; agents triage, gather evidence and propose resolutions; refunds, credits, customer emails and account changes wait for an authorised approver; approved actions run through connectors and are read back to verify they happened.
 - **Proposal intelligence** — tender PDFs/DOCX are parsed into requirements with page and character offsets, checked against approved company knowledge with hybrid retrieval, turned into an evidence-backed compliance matrix and drafted into a proposal that exports to Word and PDF with an evidence manifest.
@@ -11,9 +16,11 @@ n8n owns *sequencing* (webhooks, retries, waits, schedules, error workflows). Th
 
 ### Business use case in 15 seconds
 
-<a href="docs/media/orkestr-use-case.mp4"><img src="docs/media/orkestr-use-case.webp" alt="A customer's €149 refund request flows through ORKESTR: the email becomes a case via an n8n webhook, AI agents classify it and propose the refund with policy evidence, an approver signs off, and the refund is executed, verified and audit-logged." width="100%"></a>
+<a href="docs/media/axiomera-use-case.mp4"><img src="docs/media/axiomera-use-case.webp" alt="A customer's €149 refund request flows through Axiomera: the email becomes a case via an n8n webhook, AI agents classify it and propose the refund with policy evidence, an approver signs off, and the refund is executed, verified and audit-logged." width="100%"></a>
 
-*A customer emails asking for a €149 refund. The request arrives through a signed n8n webhook, agents check the order against the refund policy and propose the refund with sources, policy routes it to an approver (the requester cannot approve it), and the approved refund is executed, read back and written to a tamper-evident audit trail. Recorded from a real run of the stack; [MP4 version](docs/media/orkestr-use-case.mp4). Payments run against a labelled simulator.*
+*A customer emails asking for a €149 refund. The request arrives through a signed n8n webhook, agents check the order against the refund policy and propose the refund with sources, policy routes it to an approver (the requester cannot approve it), and the approved refund is executed, read back and written to a tamper-evident audit trail. Recorded from a real run of the stack; [MP4 version](docs/media/axiomera-use-case.mp4). Payments run against a labelled simulator.*
+
+![Landing page](docs/images/landing.webp)
 
 ![Command center](docs/images/command.webp)
 
@@ -23,6 +30,8 @@ n8n owns *sequencing* (webhooks, retries, waits, schedules, error workflows). Th
 | Workflow studio: n8n Workflow B with a run that retried Jira twice | RFP workspace: requirement highlighted on the source page, evidence and status |
 | ![Approvals](docs/images/approvals.webp) | ![Agent mission control](docs/images/agents.webp) |
 | Approvals bound to the exact action parameters | Agent runs with tool calls, budgets and cost |
+| ![Command center, dark theme](docs/images/dark/command.webp) | ![RFP workspace, dark theme](docs/images/dark/rfp.webp) |
+| The preserved dark theme (switch with the moon/sun control; the choice is remembered) | RFP workspace in the dark theme |
 
 > All companies, people, customers and tenders in the demo data are fictional. Integrations run against clearly labelled local simulators unless live credentials are configured.
 
@@ -126,7 +135,7 @@ flowchart LR
     D[D Deadline monitor]
     Z[Z Error handler]
   end
-  subgraph API[Orkestr API — source of truth]
+  subgraph API[Axiomera API — source of truth]
     OPS[Operations engine] --- PLAT[Approvals · audit · workflow runs · notifications]
     RFP[Proposal engine] --- PLAT
     AG[Agent runtime: tools, budgets, LangGraph]
@@ -224,13 +233,19 @@ Tests: `cd backend && pytest` — 81 tests covering security primitives, state m
 
 ## Quality assurance
 
-`python qa/e2e.py` drives 17 business use cases through the real UI and API with Playwright: sign-in, lockout and unlock, login history, the full refund journey across two roles and n8n, prompt injection, RFP review, workflow studio, policies, knowledge search, every page for all five roles (55 renders, checked for console and server errors), viewer write protection, the audit chain, and phone layouts. Latest run: **17 / 17 pass**. Seven defects were found and fixed along the way, two of them high severity (a deadlock under load and editors that depended on a public CDN). See the [QA report](docs/qa-report.md).
+`python qa/e2e.py --theme light` (or `dark`) drives 18 business use cases through the real UI and API with Playwright: sign-in, lockout and unlock, login history, the full refund journey across two roles and n8n, prompt injection, RFP review, workflow studio, policies, knowledge search, every page for all five roles (55 renders, checked for console and server errors), viewer write protection, the audit chain, theme switching and phone layouts. Latest run: **18 / 18 pass in each theme**. Seven defects were found and fixed along the way, two of them high severity (a deadlock under load and editors that depended on a public CDN). See the [QA report](docs/qa-report.md).
 
 ---
 
 ## Scalability
 
 The API is stateless and runs several workers behind per-user rate limits, admission control (overload queues briefly, then sheds with `503 Retry-After` instead of hanging), a Redis single-flight read cache, and indexed queries. Measured on one 2-vCPU box that also ran the load generator: 500 concurrent users at 100 % success with p95 under 100 ms, and 1,000–2,000 users at 99.9 % success with rising latency but no failures. Each request costs about 4.4 ms of API CPU, roughly 500 active users per API core; add workers or replicas to scale. Method, raw results and caveats are in [docs/scalability.md](docs/scalability.md).
+
+---
+
+## Design system
+
+Two themes share one component structure: **Travertine** (light: warm ivory and stone, rich black type, a bronze accent) and the original **night** palette (dark). Every colour is a semantic CSS variable consumed through Tailwind (`bg-surface`, `text-ink-mute`, `border-line`, `bg-accent`), so components never hard-code a theme. Charts, the Monaco editors and the React Flow canvas read the same tokens and redraw when the theme changes. The choice is stored per browser and applied before first paint, so pages do not flash. Type: Manrope for interface and display, Instrument Serif italic for editorial accents, IBM Plex Mono for annotation labels. The imagery is original: architectural study models rendered with three.js (`frontend/scripts/render-imagery.*`). Brand rationale, tokens, contrast measurements and the audit that led here are in [docs/design-system.md](docs/design-system.md).
 
 ---
 
@@ -249,7 +264,7 @@ backend/
   evals/           datasets, runner, results
   tests/
 n8n/               workflow JSON + generator + bootstrap
-frontend/          Next.js 15 (App Router), Tailwind, shadcn-style components, Motion, React Flow, ECharts, Monaco
+frontend/          Next.js 15 (App Router), Tailwind with CSS-variable design tokens, shadcn-style primitives, Motion, React Flow, ECharts, Monaco
 qa/                Playwright end-to-end use cases, results and evidence; video capture/render scripts
 scripts/           demo, signed-event sender, load test, screenshot generator
 docs/              architecture, ADRs, n8n, security, evaluation, API, case studies, QA report, scalability, screenshots, media
@@ -278,6 +293,8 @@ The UI labels the effective mode of every connector and every agent run.
 - The Docker Compose stack has been run on an Apple Silicon Mac. The CI pipeline has not been run on a hosted runner yet.
 - Live Slack/Jira/HubSpot adapters follow the public APIs but were not exercised against real accounts.
 
+- **Axiomera** is a provisional product name. Basic public-usage, domain and US trademark searches found no software product using it (two unrelated filings: massage chairs and make-up sponges), but axiomera.com and axiomera.io are registered by third parties and nothing here is legal clearance. Internal identifiers (`ORKESTR_*` environment variables, `X-Orkestr-*` webhook headers, Docker service names, demo e-mails, the database) keep the original name on purpose so existing deployments and integrations keep working.
+
 ## License
 
-Code in this repository: MIT. n8n is distributed under the [Sustainable Use License](https://docs.n8n.io/sustainable-use-license/); see [docs/n8n.md](docs/n8n.md#licensing) before offering Orkestr commercially.
+Code in this repository: MIT. n8n is distributed under the [Sustainable Use License](https://docs.n8n.io/sustainable-use-license/); see [docs/n8n.md](docs/n8n.md#licensing) before offering Axiomera commercially.

@@ -7,7 +7,8 @@ from pathlib import Path
 from PIL import Image
 from playwright.sync_api import sync_playwright
 
-OUT = Path(__file__).resolve().parents[1] / "docs" / "images"
+ROOT = Path(__file__).resolve().parents[1] / "docs" / "images"
+OUT = ROOT
 
 
 def save(page, name, full=False):
@@ -16,11 +17,17 @@ def save(page, name, full=False):
 
 
 def main():
-    ap = argparse.ArgumentParser(); ap.add_argument("--web", default="http://localhost:3000"); a = ap.parse_args(); W = a.web
+    global OUT
+    ap = argparse.ArgumentParser(); ap.add_argument("--web", default="http://localhost:3000"); ap.add_argument("--theme", default="light", choices=["light", "dark"])
+    a = ap.parse_args(); W = a.web
+    OUT = ROOT if a.theme == "light" else ROOT / "dark"
+    OUT.mkdir(exist_ok=True)
     with sync_playwright() as pw:
         b = pw.chromium.launch()
-        pg = b.new_context(viewport={"width": 1440, "height": 900}).new_page()
-        pg.goto(W); pg.wait_for_timeout(2500); save(pg, "landing")
+        ctx0 = b.new_context(viewport={"width": 1440, "height": 900})
+        ctx0.add_init_script(f"try{{localStorage.setItem('axiomera-theme','{a.theme}')}}catch(e){{}}")
+        pg = ctx0.new_page()
+        pg.goto(W); pg.wait_for_timeout(3200); save(pg, "landing")
         pg.goto(f"{W}/login"); pg.get_by_label("Email").fill("approver@orkestr.dev"); pg.get_by_label("Password").fill("orkestr-demo")
         pg.get_by_role("button", name="Sign in").click(); pg.wait_for_url("**/app"); pg.wait_for_timeout(4000); save(pg, "command")
         for name, url, wait in [("approvals", "/app/approvals", 2500), ("workflow-a", "/app/workflows/A", 3500), ("agents", "/app/agents", 3000),
@@ -39,7 +46,9 @@ def main():
         pg.locator("a[href^='/app/rfps/']").first.click(); pg.wait_for_timeout(3500)
         pg.locator("tbody tr").nth(7).click(); pg.wait_for_timeout(2500); save(pg, "rfp")
         pg.get_by_role("tab", name="Proposal").click(); pg.wait_for_timeout(2500); save(pg, "proposal")
-        m = b.new_context(viewport={"width": 390, "height": 844}, storage_state=pg.context.storage_state()).new_page()
+        mctx = b.new_context(viewport={"width": 390, "height": 844}, storage_state=pg.context.storage_state())
+        mctx.add_init_script(f"try{{localStorage.setItem('axiomera-theme','{a.theme}')}}catch(e){{}}")
+        m = mctx.new_page()
         m.goto(f"{W}/app"); m.wait_for_timeout(3500); save(m, "mobile-app")
         b.close()
 
