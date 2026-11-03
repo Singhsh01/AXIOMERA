@@ -68,6 +68,24 @@ class User(TimestampMixin, Base):
     # admin | operator | approver | reviewer | viewer
     role: Mapped[str] = mapped_column(String(20), default="operator")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    failed_logins: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class LoginEvent(Base):
+    """Every sign-in attempt, successful or not. Kept for security review and user-visible history."""
+
+    __tablename__ = "login_events"
+    id: Mapped[str] = pk()
+    user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True, nullable=True)
+    org_id: Mapped[str | None] = mapped_column(String(36), index=True, nullable=True)
+    email: Mapped[str] = mapped_column(String(320), index=True)
+    success: Mapped[bool] = mapped_column(Boolean)
+    reason: Mapped[str] = mapped_column(String(40))  # ok | bad_password | unknown_user | locked | inactive
+    ip: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    user_agent: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
 
 
 class WorkspaceMember(Base):
@@ -80,6 +98,7 @@ class AuditEvent(Base):
     """Append-only, hash-chained audit trail (tamper-evident per workspace)."""
 
     __tablename__ = "audit_events"
+    __table_args__ = (UniqueConstraint("workspace_id", "seq", name="uq_audit_ws_seq"),)
     id: Mapped[str] = pk()
     seq: Mapped[int] = mapped_column(Integer, index=True)
     workspace_id: Mapped[str] = ws_fk()
@@ -113,6 +132,7 @@ class InboundEvent(TimestampMixin, Base):
 
 class WorkflowRun(Base):
     __tablename__ = "workflow_runs"
+    __table_args__ = (Index("ix_workflow_runs_ws_started", "workspace_id", "started_at"),)
     id: Mapped[str] = pk()
     workspace_id: Mapped[str] = ws_fk()
     workflow_key: Mapped[str] = mapped_column(String(60), index=True)
@@ -159,6 +179,7 @@ class DeadLetter(TimestampMixin, Base):
 
 class Approval(TimestampMixin, Base):
     __tablename__ = "approvals"
+    __table_args__ = (Index("ix_approvals_ws_status", "workspace_id", "status"),)
     id: Mapped[str] = pk()
     workspace_id: Mapped[str] = ws_fk()
     action_type: Mapped[str] = mapped_column(String(60))
@@ -187,6 +208,7 @@ class Approval(TimestampMixin, Base):
 
 class Notification(TimestampMixin, Base):
     __tablename__ = "notifications"
+    __table_args__ = (Index("ix_notifications_ws_created", "workspace_id", "created_at"),)
     id: Mapped[str] = pk()
     workspace_id: Mapped[str] = ws_fk()
     user_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
@@ -200,6 +222,7 @@ class Notification(TimestampMixin, Base):
 
 class AgentRun(Base):
     __tablename__ = "agent_runs"
+    __table_args__ = (Index("ix_agent_runs_ws_started", "workspace_id", "started_at"),)
     id: Mapped[str] = pk()
     workspace_id: Mapped[str] = ws_fk()
     agent: Mapped[str] = mapped_column(String(60), index=True)
@@ -332,7 +355,8 @@ class Case(TimestampMixin, Base):
     customer: Mapped[Customer | None] = relationship()
     events: Mapped[list[CaseEvent]] = relationship(order_by="CaseEvent.created_at", cascade="all, delete-orphan")
     actions: Mapped[list[CaseAction]] = relationship(order_by="CaseAction.created_at", cascade="all, delete-orphan")
-    __table_args__ = (UniqueConstraint("workspace_id", "number"),)
+    __table_args__ = (UniqueConstraint("workspace_id", "number"), Index("ix_cases_ws_status", "workspace_id", "status"),
+                      Index("ix_cases_ws_created", "workspace_id", "created_at"))
 
 
 class CaseEvent(TimestampMixin, Base):
