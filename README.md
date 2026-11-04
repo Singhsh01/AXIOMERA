@@ -20,6 +20,12 @@ n8n owns *sequencing* (webhooks, retries, waits, schedules, error workflows). Th
 
 *A customer emails asking for a €149 refund. The request arrives through a signed n8n webhook, agents check the order against the refund policy and propose the refund with sources, policy routes it to an approver (the requester cannot approve it), and the approved refund is executed, read back and written to a tamper-evident audit trail. Recorded from a real run of the stack; [MP4 version](docs/media/axiomera-use-case.mp4). Payments run against a labelled simulator.*
 
+### The demo journey (58 s): the everyday path and the extremes
+
+<a href="docs/media/axiomera-journey.mp4"><img src="docs/media/axiomera-journey-poster.jpg" alt="Play the Axiomera demo journey" width="100%"></a>
+
+Recorded from real runs of this stack, nothing mocked: **01** a €149 refund from e-mail to verified execution · **02** an e-mail that orders the AI to approve €9,000, flagged and held · **03** Jira failing twice (n8n retries), then staying down (dead letter), then replayed by an admin · **04** a tender with hidden instructions, excluded from the requirements · **05** an operator who cannot approve, and a brute-force lockout on record · **06** a thousand users at once (measured, see [scalability](docs/scalability.md)) · observability, and the dark theme. [Play the MP4](docs/media/axiomera-journey.mp4) · re-record with `qa/video/journey_capture.py` and `render_journey.py`.
+
 ![Landing page](docs/images/landing.webp)
 
 ![Command center](docs/images/command.webp)
@@ -233,7 +239,7 @@ Tests: `cd backend && pytest` — 81 tests covering security primitives, state m
 
 ## Quality assurance
 
-`python qa/e2e.py --theme light` (or `dark`) drives 18 business use cases through the real UI and API with Playwright: sign-in, lockout and unlock, login history, the full refund journey across two roles and n8n, prompt injection, RFP review, workflow studio, policies, knowledge search, every page for all five roles (55 renders, checked for console and server errors), viewer write protection, the audit chain, theme switching and phone layouts. Latest run: **18 / 18 pass in each theme**. Seven defects were found and fixed along the way, two of them high severity (a deadlock under load and editors that depended on a public CDN). See the [QA report](docs/qa-report.md).
+`python qa/e2e.py --theme light` (or `dark`) drives 19 business use cases through the real UI and API with Playwright: sign-in, lockout and unlock, login history, the full refund journey across two roles and n8n, prompt injection, RFP review, workflow studio, policies, knowledge search, every page for all five roles (55 renders, checked for console and server errors), viewer write protection, the audit chain, theme switching, the landing page's scroll scenes and phone layouts. Latest run: **19 / 19 pass in each theme**. Seven defects were found and fixed along the way, two of them high severity (a deadlock under load and editors that depended on a public CDN). See the [QA report](docs/qa-report.md).
 
 ---
 

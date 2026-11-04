@@ -21,7 +21,9 @@ The Balkon template (architecture studio) was studied for its principles, not it
 - black square buttons, short heavy bars as section markers, hairline rules;
 - full-bleed photography in split-screen and overlapping band compositions; generous whitespace.
 
-Nothing was copied: no images, icons, logo, text or code. Balkon's photography is replaced by **original renders** (below), its triangular "A" logo has no counterpart here, and the colour, type and component system are new.
+- a drifting polygonal network behind its intro, and alternating light and dark bands as the page scrolls.
+
+Nothing was copied: no images, icons, logo, text or code. The network idea became a **constellation of the systems and agents the product coordinates**, the bands became **scroll scenes** that switch the whole page between themes, its photography became **live product demonstrations**, its triangular "A" logo has no counterpart here, and the colour, type and component system are new.
 
 ## 3. Brand: Axiomera
 
@@ -90,14 +92,26 @@ Both chart palettes pass the dataviz validator for their own surface (lightness 
 
 Screen-specific compositions: the command center's charcoal **decision band**; the workflow index as a lettered schedule; the agent **roster table**; the RFP **title block** (issuer, reference and key dates as a ruled grid, as on a drawing sheet); React Flow nodes as drawing-sheet cards with a state bar and an offset ink outline when selected.
 
-## 7. Imagery
+## 7. Imagery: the product, not pictures of buildings
 
-Five original renders of architectural study models (stepped cantilevers, a fin facade, a colonnade, a field of blocks, a dusk cantilever) made with three.js and ambient occlusion in headless Chromium, graded warm with fine grain. Night variants are graded to the dark palette. Source: `frontend/scripts/render-imagery.html` and `render-imagery.py`. Product screenshots on the landing page are real captures of the app in each theme (`frontend/scripts/product-shots.py`).
+An earlier iteration used rendered architectural models as imagery. They looked refined but said nothing about the product, so they were removed. The visuals now demonstrate what the platform does:
+
+- **Constellation** (`components/landing/Constellation.tsx`): drifting points with named hubs (n8n, Triage agent, Approval, Jira, Payments ledger, RFP, Evidence, Audit chain, Slack). Bronze pulses travel along edges like messages between systems, and the pointer pulls links towards it. It sits behind the hero, the agent chapter, the closing section and the login panel.
+- **Two engines**: an operations console replaying the real Workflow A/B trace, and a tender page being read, with requirements lighting up and receiving their compliance status. The poisoned line is flagged.
+- **Agent collaboration**: the nine agents around a human approver, with the real handoff order of a case and a tender lighting up step by step.
+- **Approval gate** (canvas): proposed actions flow right; manipulated input is held at the injection scan; the gate passes only approved actions, which are then executed and read back.
+- **Product screenshots** in both themes, captured from the running app (`frontend/scripts/product-shots.py`).
+
+All canvases read the theme tokens of their own context, pause off-screen and in hidden tabs, cap the device pixel ratio at 2, and draw one still frame under `prefers-reduced-motion`.
 
 ## 8. Motion
 
 Restrained and optional: headline lines rise from a mask, sections fade up once on scroll, the hero picture drifts with slight parallax, tab underlines and active-nav bars draw in, dialogs rise in, the workflow trace advances step by step, and theme switches cross-fade colours only (no layout properties, so nothing shifts). Everything uses transforms and opacity, and `prefers-reduced-motion` turns it off.
 
-## 9. Theme switching
+## 9. Scroll scenes
+
+On the landing page, chapters marked `data-tone="alt"` (proposals, agents, integrations, the demo journey, the closing and the footer) switch the whole page to the opposite theme while they hold the middle of the viewport: ivory to night in the light theme, night to ivory in the dark one. It works through one attribute (`data-scene="alt"` on `<html>`) that selects the opposite token set, so every component, image and canvas follows. Colours cross-fade over 750 ms and theme-specific pictures fade with them. The attribute is removed when leaving the page, and reduced motion makes the change instant.
+
+## 10. Theme switching
 
 `data-theme` on `<html>`, set by an inline script before first paint from `localStorage` (light by default). The toggle sits in the landing header, the login page, the app sidebar and the mobile top bar. Charts (ECharts), the Monaco editors and the React Flow canvas subscribe to theme changes. Verified by the E2E test UX-03: switching moves the page heading by 0 px and persists across navigation and reload.

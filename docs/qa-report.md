@@ -8,7 +8,7 @@
 
 | Layer | Result |
 |---|---|
-| End-to-end use cases (`python qa/e2e.py --theme light\|dark`) | **18 / 18 pass in the light theme and 18 / 18 in the dark theme** (after fixes below); raw output in [`qa/results-light.json`](../qa/results-light.json) and [`qa/results-dark.json`](../qa/results-dark.json), evidence for both themes in [`qa/screens`](../qa/screens) |
+| End-to-end use cases (`python qa/e2e.py --theme light\|dark`) | **19 / 19 pass in the light theme and 19 / 19 in the dark theme** (after fixes below); raw output in [`qa/results-light.json`](../qa/results-light.json) and [`qa/results-dark.json`](../qa/results-dark.json), evidence for both themes in [`qa/screens`](../qa/screens) |
 | Backend suite (`cd backend && pytest`) | **81 / 81 pass** |
 | Page renders checked for console and server errors | 55 (11 pages × 5 roles), 0 errors |
 | Load test | 500 concurrent users 100 % success, p95 48–84 ms; 1,000–2,000 users 99.9 % success with graceful degradation on a 2-vCPU box ([details](scalability.md)) |
@@ -35,6 +35,7 @@
 | UX-01 | Landing: stakeholder navigation, no horizontal scroll at 390 px | anonymous | pass | `ux-01-*` |
 | UX-02 | App shell fits a 390 px phone | operator | pass | `ux-02-app-mobile` |
 | UX-03 | Theme switch: light ↔ dark, persists across navigation and reload, heading moves 0 px | operator | pass | `ux-03-theme-*` |
+| UX-04 | Landing: the constellation paints; scroll scenes go base → alt → base → alt (night in the light theme, ivory in the dark one); the journey video is served; the scene does not leak to the next page | anonymous | pass | `ux-04-scene-alt-*` |
 
 ## Defects found and fixed
 
@@ -64,6 +65,20 @@ The full suite was re-run in both themes after the rebrand and redesign, along w
 | T-2 | Test | UC-04 raced the requirements table because the new title block shows "Requirements" before the matrix loads | Waits for table rows instead |
 
 Landing weight (light, scrolled to the end): 152 kB first-load JS, 354 kB images; images for the inactive theme are not downloaded. App routes grew by about 3 kB.
+
+## Constellations, scroll scenes and the demo journey
+
+Recording the demo journey drove every extreme case through the real stack, and turned up two product defects:
+
+| # | Severity | Finding | Fix |
+|---|---|---|---|
+| D-8 | Medium | Workflow B: an alert duplicating an open incident took the "not new" branch, which had no terminal step, so the run stayed "running" (only the 2-hour sweeper would close it) | New `Duplicate Linked` step reports a terminal status; workflow JSON regenerated and re-imported |
+| D-9 | Low | Approvals page told an operator "Needs a approver", in small print easy to miss | Correct article; the refusal is now a clear locked notice that explains the person can review but not decide |
+| R-5 | Medium | At 390 px the Engine I console widened its column (grid `min-width: auto`), causing 104 px of horizontal scroll | `min-w-0` on the grid items and the truncating text |
+| R-6 | Low | On phones and tablets the constellation's hub labels ran under the headline and body copy | A page-coloured veil below `lg` |
+| P-1 | Perf | The hero constellation used about 41 % of the main thread in headless Chromium (software rendering) | 30 fps, device-pixel-ratio cap 1.5, fewer points: 23 %. Canvases draw nothing off-screen or in hidden tabs; reduced motion draws one still frame |
+
+The n8n workflow display names now read "Axiomera A–E, Z"; their IDs (`OrkA0…`) are unchanged, so existing executions, dead letters and imports still match.
 
 ## Not covered / known limits
 
