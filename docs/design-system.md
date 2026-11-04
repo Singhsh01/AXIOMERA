@@ -39,7 +39,7 @@ Nothing was copied: no images, icons, logo, text or code. The network idea becam
 
 **Mark:** a portal (two columns under an overhanging lintel) bisected by a single axis, with a bronze square where decisions are taken: the gate every consequential action passes through. Drawn on a 32-unit grid in `currentColor` plus the accent token, so one SVG serves light, dark, the sidebar, the favicon (`public/icon.svg`, legible at 16 px) and the README (`docs/media/axiomera-wordmark-*.svg`). Wordmark: Manrope 700, uppercase, +0.24 em tracking.
 
-**What keeps the old name:** `ORKESTR_*` environment variables, `X-Orkestr-*` webhook headers, Docker service names, database names, demo e-mail addresses and historical records. Renaming them would break existing deployments and n8n integrations for no user-visible gain.
+**Former name:** the product launched as Orkestr. Every identifier was renamed in the follow-up audit, with backwards compatibility for existing installations; the inventory, the compatibility rules and the two identifiers deliberately kept are in [naming-audit.md](naming-audit.md).
 
 ## 4. Tokens
 

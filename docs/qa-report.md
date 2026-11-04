@@ -93,6 +93,6 @@ The n8n workflow display names now read "Axiomera Aâ€“E, Z"; their IDs (`OrkA0â€
 ```bash
 docker compose up -d                       # or the native stack
 pip install playwright httpx && python -m playwright install chromium   # outside the dev container
-export ORKESTR_DATABASE_URL=postgresql+psycopg://orkestr:orkestr@localhost:5433/orkestr   # AUTH-03 creates a throwaway user
+export AXIOMERA_DATABASE_URL=postgresql+psycopg://axiomera:axiomera@localhost:5433/axiomera   # AUTH-03 creates a throwaway user
 python qa/e2e.py --web http://localhost:3000 --api http://localhost:8000
 ```

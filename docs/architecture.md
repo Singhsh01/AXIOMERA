@@ -35,7 +35,7 @@ sequenceDiagram
   participant E as n8n Workflow E
   participant Human as Approver (web)
   participant Pay as Payments connector
-  Src->>A: POST /webhook/orkestr/intake (HMAC signed)
+  Src->>A: POST /webhook/axiomera/intake (HMAC signed)
   A->>A: Verify Signature, Validate Payload
   A->>API: POST /ingest/email (Message-ID = idempotency key)
   API-->>A: case #1001
@@ -101,5 +101,5 @@ For each requirement: retrieve evidence; compute key-term coverage per passage; 
 
 - Structured JSON logs with correlation ids (`X-Correlation-Id` propagated from n8n).
 - Prometheus metrics at `/metrics`: HTTP, workflow steps, agent runs and latency, tool calls, LLM tokens, approvals, duplicates, integration calls.
-- OpenTelemetry tracing of FastAPI (OTLP/HTTP export when `ORKESTR_OTEL_ENABLED=true`).
+- OpenTelemetry tracing of FastAPI (OTLP/HTTP export when `AXIOMERA_OTEL_ENABLED=true`).
 - `/analytics/overview` derives business metrics from stored events: workflow success and latency, case resolution time, SLA compliance, RFP processing time, evidence coverage, tool failure rate, model usage and estimated cost, approval turnaround, latest evaluation results.

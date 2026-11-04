@@ -6,7 +6,7 @@ The goal is many concurrent customers without the API or the database falling ov
 
 | Layer | Mechanism | Where |
 |---|---|---|
-| Edge of the API | Per-user rate limit (`ORKESTR_RATE_LIMIT_PER_MINUTE`, default 600). Keyed on the signed-in user, not the proxy IP, so one busy tab cannot throttle everyone behind the web proxy | `app/main.py` |
+| Edge of the API | Per-user rate limit (`AXIOMERA_RATE_LIMIT_PER_MINUTE`, default 600). Keyed on the signed-in user, not the proxy IP, so one busy tab cannot throttle everyone behind the web proxy | `app/main.py` |
 | Login | 30 attempts/min per IP, 10/min per e-mail, 5-failure lockout for 15 min, every attempt recorded | `app/routers/auth.py` |
 | Admission control | At most `db_pool_size - 2` API requests run at once per worker; the rest wait up to 8 s, then get `503 Retry-After: 2` | `app/main.py` |
 | Read cache | Single-flight, stale-while-revalidate cache in Redis: one request per key recomputes and the others get the last value. Dashboards and lists are computed about once per TTL per workspace, not once per viewer | `app/core/cache.py` |
@@ -46,7 +46,7 @@ The number that transfers to real hardware is the measured cost per request: **4
 
 The API is stateless: state lives in Postgres and limits and cache in Redis. To scale:
 1. Raise `WEB_CONCURRENCY` to about the number of cores.
-2. Keep `WEB_CONCURRENCY × (ORKESTR_DB_POOL_SIZE + max_overflow)` below Postgres `max_connections` (120). Beyond that, put PgBouncer in front of Postgres.
+2. Keep `WEB_CONCURRENCY × (AXIOMERA_DB_POOL_SIZE + max_overflow)` below Postgres `max_connections` (120). Beyond that, put PgBouncer in front of Postgres.
 3. Run more API replicas behind a load balancer, all pointing at the same Postgres and Redis.
 
 Prometheus metrics at `/metrics` are per worker process. Aggregate them in Prometheus, or use the multiprocess mode of `prometheus_client` if you need one scrape per host.
@@ -55,7 +55,7 @@ Prometheus metrics at `/metrics` are per worker process. Aggregate them in Prome
 
 ```bash
 cd backend && pip install -r requirements.txt
-export ORKESTR_DATABASE_URL=postgresql+psycopg://orkestr:orkestr@localhost:5433/orkestr   # the compose Postgres
+export AXIOMERA_DATABASE_URL=postgresql+psycopg://axiomera:axiomera@localhost:5433/axiomera   # the compose Postgres
 python ../scripts/loadtest.py --users 500 --duration 45 --base http://localhost:8000
 python ../scripts/loadtest.py --cleanup
 ```

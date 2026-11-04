@@ -35,7 +35,7 @@ All nine stages completed within ~0.5 s of the first API call.
 
 ### Human review
 
-As `reviewer@orkestr.dev`: CT-02 was set to non-compliant with a rationale (recorded with before/after in the audit log). A final export attempted before approval returned **403**. The reviewer approved the proposal (“Approved subject to insurer confirmation”); final DOCX and PDF were exported with the status “APPROVED FOR SUBMISSION”. Samples: [`docs/samples`](../samples).
+As `reviewer@axiomera.dev`: CT-02 was set to non-compliant with a rationale (recorded with before/after in the audit log). A final export attempted before approval returned **403**. The reviewer approved the proposal (“Approved subject to insurer confirmation”); final DOCX and PDF were exported with the status “APPROVED FOR SUBMISSION”. Samples: [`docs/samples`](../samples).
 
 Each export stores an evidence manifest: for every citation, the chunk id and SHA-256 of the evidence text it was generated from, so a sentence can be traced to the exact version of the source passage.
 
@@ -45,5 +45,5 @@ Each export stores an evidence manifest: for every citation, the chunk id and SH
 
 ## Limitations seen
 
-- Without a model key, drafting is extractive: sentences are well-cited but can feel stitched, and one bid-library sentence landed in a less fitting section. With `ORKESTR_LLM_PROVIDER=anthropic` the model writes connected prose from the same numbered evidence, and the claim checker still removes unsupported claims.
+- Without a model key, drafting is extractive: sentences are well-cited but can feel stitched, and one bid-library sentence landed in a less fitting section. With `AXIOMERA_LLM_PROVIDER=anthropic` the model writes connected prose from the same numbered evidence, and the claim checker still removes unsupported claims.
 - The tender is generated; real tenders with tables, scanned annexes and multi-column layouts will need OCR (Tesseract) and more extraction rules.

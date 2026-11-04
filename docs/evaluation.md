@@ -31,7 +31,7 @@ Results go to `backend/evals/results/<suite>.json` (full per-item results) and `
 
 ## Latest results
 
-Deterministic fixtures (`ORKESTR_LLM_PROVIDER=fixture`). See `backend/evals/results/*.json` for timestamps and per-item detail.
+Deterministic fixtures (`AXIOMERA_LLM_PROVIDER=fixture`). See `backend/evals/results/*.json` for timestamps and per-item detail.
 
 | Metric | Result |
 |---|---|

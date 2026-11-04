@@ -2,7 +2,7 @@
 
 Generated from the running service (`GET /openapi.json`; interactive docs at `http://localhost:8000/docs`). All routes are under `/api/v1` except `/health` and `/metrics`.
 
-Authentication: users send `Authorization: Bearer <jwt>` (or the `orkestr_token` cookie set by `/auth/login`). n8n sends `X-Orkestr-Service-Token`, plus `X-N8N-Execution-Id`, `X-Orkestr-Workflow` and `X-Orkestr-Node`, which the API records as workflow steps. The service principal can never decide approvals.
+Authentication: users send `Authorization: Bearer <jwt>` (or the `axiomera_session` cookie set by `/auth/login`). n8n sends `X-Axiomera-Service-Token`, plus `X-N8N-Execution-Id`, `X-Axiomera-Workflow` and `X-Axiomera-Node`, which the API records as workflow steps. The service principal can never decide approvals.
 
 ## Auth
 

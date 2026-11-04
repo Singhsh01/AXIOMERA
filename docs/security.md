@@ -9,7 +9,7 @@
 | operator | JWT | read, cases, tenders, knowledge uploads, trigger workflows |
 | approver | JWT | operator-level work plus deciding approvals up to its rank |
 | admin | JWT | everything, incl. critical approvals, policies, integrations, dead-letter replay, evaluations |
-| n8n service | `X-Orkestr-Service-Token` | read, move cases/RFPs forward, report workflow steps, execute *already approved* actions, notify — **never decide** |
+| n8n service | `X-Axiomera-Service-Token` | read, move cases/RFPs forward, report workflow steps, execute *already approved* actions, notify — **never decide** |
 
 Every query filters by the principal's workspace; users only see workspaces they are members of.
 
@@ -50,5 +50,5 @@ Emails, tender documents and tool outputs are data:
 
 - Single-instance rate limiting; no account lockout or MFA for the demo login.
 - JWT revocation is by expiry only.
-- Data retention is configurable (`ORKESTR_RETENTION_DAYS`) but no purge job ships yet; n8n execution data is pruned after 14 days.
+- Data retention is configurable (`AXIOMERA_RETENTION_DAYS`) but no purge job ships yet; n8n execution data is pruned after 14 days.
 - Injection detection is pattern-based; it is a tripwire, not a guarantee — the approval boundary is what prevents harm.
