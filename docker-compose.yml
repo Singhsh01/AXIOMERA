@@ -1,10 +1,10 @@
-# Orkestr — local stack, sized for an Apple Silicon laptop with 8 GB RAM.
+# Axiomera — local stack, sized for an Apple Silicon laptop with 8 GB RAM.
 #
 #   docker compose up -d --build                         core: postgres, redis, n8n, api (2 workers), web  (~2.3 GB)
 #   docker compose --profile observability up -d         + OpenTelemetry collector, Jaeger, Prometheus
 #
 # n8n and the API bind to 127.0.0.1 only; the n8n editor is not exposed beyond this machine.
-name: orkestr
+name: orkestr  # kept on purpose: existing Docker volumes (database, n8n data) are named after the project
 
 x-n8n-env: &n8n-env
   N8N_DIAGNOSTICS_ENABLED: "false"

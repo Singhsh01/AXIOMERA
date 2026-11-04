@@ -58,6 +58,7 @@ Recorded from real runs of this stack, nothing mocked: **01** a €149 refund fr
 Requirements: Docker Desktop with ~3 GB of memory available. The core profile is sized for an 8 GB Apple Silicon MacBook (PostgreSQL 512 MB, n8n 1 GB, API 768 MB with 2 workers, Redis 96 MB, web 384 MB).
 
 ```bash
+git clone https://github.com/Singhsh01/axiomera.git && cd axiomera
 cp .env.example .env          # defaults work locally; change secrets before exposing anything
 docker compose up -d --build  # postgres+pgvector, redis, n8n (workflows auto-imported), api, web
 ```
