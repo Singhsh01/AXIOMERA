@@ -1,7 +1,7 @@
 "use client";
-import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
+import { motion, useReducedMotion, useScroll } from "motion/react";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/theme";
 import { BRAND } from "@/lib/brand";
@@ -35,35 +35,45 @@ export function RiseLines({ lines, className, delay = 0.15 }: { lines: React.Rea
   );
 }
 
-/** Light/dark variants of the same picture; CSS picks one, so there is no flash or layout shift. */
+/** Light/dark variants of the same picture, stacked; the active theme or scroll scene fades between them. */
 export function ThemedImage({ light, dark, alt, className, imgClassName, priority }: { light: string; dark: string; alt: string; className?: string; imgClassName?: string; priority?: boolean }) {
   return (
-    <span className={cn("block", className)}>
+    <span className={cn("relative block", className)}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={light} alt={alt} className={cn("dark:hidden", imgClassName)} loading={priority ? "eager" : "lazy"} decoding="async" />
+      <img src={light} alt={alt} className={cn("tone-light", imgClassName)} loading={priority ? "eager" : "lazy"} decoding="async" />
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={dark} alt={alt} className={cn("hidden dark:block", imgClassName)} loading="lazy" decoding="async" />
+      <img src={dark} alt="" aria-hidden className={cn("tone-dark absolute inset-0 h-full w-full", imgClassName)} loading="lazy" decoding="async" />
     </span>
   );
 }
 
-/** Hero picture drifting slower than the page (subtle parallax; off for reduced motion). */
-export function ParallaxImage({ light, dark, alt }: { light: string; dark: string; alt: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const reduce = useReducedMotion();
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
-  const y = useTransform(scrollYProgress, [0, 1], ["0%", reduce ? "0%" : "18%"]);
-  const scale = useTransform(scrollYProgress, [0, 1], [1.04, reduce ? 1.04 : 1.12]);
-  return (
-    <div ref={ref} className="absolute inset-0 overflow-hidden">
-      <motion.div style={{ y, scale }} className="absolute inset-0">
-        <ThemedImage light={light} dark={dark} alt={alt} priority className="h-full w-full" imgClassName="h-full w-full object-cover object-[70%_center]" />
-      </motion.div>
-    </div>
-  );
+/**
+ * Scroll scenes: chapters marked data-tone="alt" switch the whole page to the opposite theme while
+ * they hold the middle of the viewport (ivory to night in the light theme, night to ivory in the dark
+ * one). Colours cross-fade; the attribute is removed when leaving the page.
+ */
+export function SceneController() {
+  useEffect(() => {
+    const root = document.documentElement;
+    let timer = 0;
+    const set = (alt: boolean) => {
+      const next = alt ? "alt" : "";
+      if ((root.dataset.scene ?? "") === next) return;
+      root.classList.add("scene-shift");
+      if (alt) root.dataset.scene = "alt"; else delete root.dataset.scene;
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => root.classList.remove("scene-shift"), 820);
+    };
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) if (e.isIntersecting) set((e.target as HTMLElement).dataset.tone === "alt");
+    }, { rootMargin: "-50% 0px -50% 0px" });
+    document.querySelectorAll<HTMLElement>("[data-tone]").forEach((el) => io.observe(el));
+    return () => { io.disconnect(); window.clearTimeout(timer); root.classList.remove("scene-shift"); delete root.dataset.scene; };
+  }, []);
+  return null;
 }
 
-const LINKS = [["Platform", "#platform"], ["Request lifecycle", "#lifecycle"], ["Governance", "#governance"], ["Evidence", "#evidence"]];
+const LINKS = [["Two engines", "#engines"], ["Request lifecycle", "#lifecycle"], ["Governance", "#governance"], ["Demo journey", "#journey"]];
 
 /** Transparent over the hero, a solid sheet with a hairline once the page scrolls. */
 export function SiteHeader() {

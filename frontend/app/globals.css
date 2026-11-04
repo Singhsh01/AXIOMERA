@@ -7,7 +7,9 @@
    Light = "Travertine": warm ivory and stone, rich black type, bronze accent.
    Dark  = the original Orkestr night palette, preserved. */
 :root,
-:root[data-theme="light"] {
+:root[data-theme="light"]:not([data-scene="alt"]),
+:root[data-theme="dark"][data-scene="alt"],
+:root[data-theme="dark"] .tone-invert {
   --page: 244 240 232;        /* #F4F0E8 ivory */
   --surface: 251 249 244;     /* #FBF9F4 */
   --raised: 236 230 219;      /* #ECE6DB stone */
@@ -38,7 +40,9 @@
   color-scheme: light;
 }
 
-:root[data-theme="dark"] {
+:root[data-theme="dark"]:not([data-scene="alt"]),
+:root:not([data-theme="dark"])[data-scene="alt"],
+:root:not([data-theme="dark"]) .tone-invert {
   --page: 7 10 20;
   --surface: 14 20 38;
   --raised: 19 27 51;
@@ -80,6 +84,19 @@ html.theme-fade *, html.theme-fade *::before, html.theme-fade *::after {
   transition: background-color 280ms ease, border-color 280ms ease, color 280ms ease, fill 280ms ease, stroke 280ms ease !important;
 }
 
+/* Scroll scenes on the landing page: alternate chapters swap to the opposite theme's tokens.
+   Colours cross-fade while the scene changes; theme-specific pictures fade with them. */
+html.scene-shift *, html.scene-shift *::before, html.scene-shift *::after {
+  transition: background-color 750ms cubic-bezier(0.22, 1, 0.36, 1), border-color 750ms ease, color 750ms ease, fill 750ms ease, stroke 750ms ease !important;
+}
+.tone-invert { background: rgb(var(--page)); color: rgb(var(--ink)); }
+.tone-light, .tone-dark { transition: opacity 800ms cubic-bezier(0.22, 1, 0.36, 1); }
+.tone-dark { opacity: 0; }
+:root[data-theme="dark"]:not([data-scene="alt"]) .tone-dark,
+:root:not([data-theme="dark"])[data-scene="alt"] .tone-dark { opacity: 1; }
+:root[data-theme="dark"]:not([data-scene="alt"]) .tone-light,
+:root:not([data-theme="dark"])[data-scene="alt"] .tone-light { opacity: 0; }
+
 /* Faint drafting grid used behind editorial sections. */
 .gridlines {
   background-image:
@@ -119,6 +136,8 @@ html.theme-fade *, html.theme-fade *::before, html.theme-fade *::after {
 
 @media (prefers-reduced-motion: reduce) {
   .signal, .live-dot, .skeleton::after, .scroll-cue, .page-enter { animation: none !important; }
+  html.scene-shift * { transition: none !important; }
+  .tone-light, .tone-dark { transition: none; }
   html.theme-fade * { transition: none !important; }
   * { scroll-behavior: auto !important; }
 }
