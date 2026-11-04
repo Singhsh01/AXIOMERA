@@ -13,6 +13,8 @@ from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from sqlalchemy import text
 
 from app.config import get_settings
+from app.core import naming
+from app.core.naming import LEGACY_SESSION_COOKIE, SESSION_COOKIE
 from app.core.cache import hit_rate_limit
 from app.core.observability import HTTP_LATENCY, HTTP_REQUESTS, REGISTRY, configure_logging, correlation_id_var, setup_tracing
 from app.db import get_engine, new_id
@@ -22,7 +24,7 @@ from app.routers import auth, knowledge, ops, platform, rfp
 import app.agents.tools  # noqa: F401  (registers tools)
 
 configure_logging()
-log = logging.getLogger("orkestr")
+log = logging.getLogger("axiomera")
 settings = get_settings()
 
 app = FastAPI(
@@ -39,7 +41,7 @@ def _client_key(request: Request) -> str:
     """Rate-limit per signed-in user when possible. Browser traffic arrives through the web
     proxy, so the TCP peer is the proxy for everyone; the session token (or forwarded IP) is not."""
     # Same precedence as authentication (deps.get_principal): Authorization header, then cookie.
-    token = request.headers.get("authorization", "") or request.cookies.get("orkestr_token")
+    token = request.headers.get("authorization", "") or request.cookies.get(SESSION_COOKIE) or request.cookies.get(LEGACY_SESSION_COOKIE)
     if token:
         return "t:" + hashlib.sha256(token.encode()).hexdigest()[:24]
     fwd = request.headers.get("x-forwarded-for")
@@ -74,7 +76,7 @@ async def platform_middleware(request: Request, call_next):
     cid = request.headers.get("x-correlation-id") or new_id()
     correlation_id_var.set(cid[:64])
     # Rate limiting (sliding window per client). Service calls from n8n are exempt.
-    if request.url.path.startswith("/api/") and "x-orkestr-service-token" not in request.headers:
+    if request.url.path.startswith("/api/") and naming.header(request.headers, "Service-Token") is None:
         if hit_rate_limit(_client_key(request), settings.rate_limit_per_minute):
             return JSONResponse({"detail": "Rate limit exceeded"}, status_code=429, headers={"Retry-After": "60"})
     t0 = time.perf_counter()
@@ -111,3 +113,6 @@ def metrics():
 
 if settings.otel_enabled:
     setup_tracing(app, settings.otel_endpoint)
+
+
+naming.warn_legacy_env(log)

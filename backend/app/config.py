@@ -1,4 +1,5 @@
-"""Runtime configuration. Every value can be overridden with an ORKESTR_* environment variable."""
+"""Runtime configuration. Every value can be overridden with an AXIOMERA_* environment variable
+(legacy ORKESTR_* names are still read; see app/core/naming.py)."""
 from __future__ import annotations
 
 from functools import lru_cache
@@ -7,20 +8,22 @@ from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.core.naming import apply_legacy_env
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="ORKESTR_", env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_prefix="AXIOMERA_", env_file=".env", extra="ignore")
 
     env: str = "development"
-    database_url: str = "postgresql+psycopg://orkestr:orkestr@localhost:5432/orkestr"
+    database_url: str = "postgresql+psycopg://axiomera:axiomera@localhost:5432/axiomera"
     redis_url: str | None = None
 
     # Auth
     jwt_secret: str = "dev-only-change-me-please-32-bytes-min"
     jwt_ttl_minutes: int = 12 * 60
-    # Shared secret n8n uses when calling the API (sent as X-Orkestr-Service-Token)
+    # Shared secret n8n uses when calling the API (sent as X-Axiomera-Service-Token)
     service_token: str = "dev-service-token"
     # HMAC secret used to sign webhooks exchanged with n8n (both directions)
     webhook_secret: str = "dev-webhook-secret"
@@ -70,4 +73,5 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
+    apply_legacy_env()
     return Settings()

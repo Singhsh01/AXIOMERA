@@ -8,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.cache import hit_rate_limit
+from app.core.naming import LEGACY_SESSION_COOKIE, SESSION_COOKIE
 from app.core.security import PERMISSIONS, create_token, verify_password
 from app.db import get_db, utcnow
 from app.deps import Principal, get_principal, require
@@ -69,7 +70,7 @@ def login(body: LoginIn, request: Request, response: Response, db: Session = Dep
     user.failed_logins, user.locked_until, user.last_login_at = 0, None, utcnow()
     _record(db, email=email, user=user, success=True, reason="ok", request=request)
     token = create_token(user.id, user.org_id, user.role)
-    response.set_cookie("orkestr_token", token, httponly=True, samesite="lax", max_age=12 * 3600)
+    response.set_cookie(SESSION_COOKIE, token, httponly=True, samesite="lax", max_age=12 * 3600)
     ws = db.scalars(select(Workspace).join(WorkspaceMember, WorkspaceMember.workspace_id == Workspace.id)
                     .where(WorkspaceMember.user_id == user.id)).first()
     audit.record(db, ws.id, f"user:{user.id}", "auth.login", "user", user.id, {"ip": client_ip(request)})
@@ -79,7 +80,8 @@ def login(body: LoginIn, request: Request, response: Response, db: Session = Dep
 
 @router.post("/logout")
 def logout(response: Response):
-    response.delete_cookie("orkestr_token")
+    response.delete_cookie(SESSION_COOKIE)
+    response.delete_cookie(LEGACY_SESSION_COOKIE)
     return {"ok": True}
 
 

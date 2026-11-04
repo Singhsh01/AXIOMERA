@@ -18,8 +18,11 @@ class WfCtx:
     node: str | None
 
 
-def wf_ctx(x_orkestr_workflow: str | None = Header(default=None), x_orkestr_node: str | None = Header(default=None)) -> WfCtx:
-    return WfCtx(x_orkestr_workflow, x_orkestr_node)
+def wf_ctx(x_axiomera_workflow: str | None = Header(default=None), x_axiomera_node: str | None = Header(default=None),
+           x_orkestr_workflow: str | None = Header(default=None, include_in_schema=False),
+           x_orkestr_node: str | None = Header(default=None, include_in_schema=False)) -> WfCtx:
+    """Workflow and node reported by n8n (legacy X-Orkestr-* headers are still accepted)."""
+    return WfCtx(x_axiomera_workflow or x_orkestr_workflow, x_axiomera_node or x_orkestr_node)
 
 
 def map_errors(fn: Callable):

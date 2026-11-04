@@ -2,7 +2,7 @@
 
 Two kinds of callers exist:
   * users            – JWT bearer token, role-based permissions, scoped to one workspace;
-  * the n8n service  – X-Orkestr-Service-Token header, a fixed least-privilege permission set.
+  * the n8n service  – X-Axiomera-Service-Token header (legacy X-Orkestr-Service-Token accepted), a fixed least-privilege permission set.
 The service principal can move work forward but can never *decide* an approval.
 """
 from __future__ import annotations
@@ -14,6 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
+from app.core.naming import LEGACY_SESSION_COOKIE, SESSION_COOKIE
 from app.core.observability import correlation_id_var
 from app.core.security import PERMISSIONS, constant_time_equals, decode_token
 from app.db import get_db
@@ -60,7 +61,8 @@ def get_principal(
     request: Request,
     db: Session = Depends(get_db),
     authorization: str | None = Header(default=None),
-    x_orkestr_service_token: str | None = Header(default=None),
+    x_axiomera_service_token: str | None = Header(default=None),
+    x_orkestr_service_token: str | None = Header(default=None, include_in_schema=False),  # legacy name, accepted but not advertised
     x_workspace_id: str | None = Header(default=None),
     x_n8n_execution_id: str | None = Header(default=None),
     x_correlation_id: str | None = Header(default=None),
@@ -70,8 +72,9 @@ def get_principal(
     if x_correlation_id:
         correlation_id_var.set(x_correlation_id[:64])
     settings = get_settings()
-    if x_orkestr_service_token is not None:
-        if not constant_time_equals(x_orkestr_service_token, settings.service_token):
+    service_token = x_axiomera_service_token if x_axiomera_service_token is not None else x_orkestr_service_token
+    if service_token is not None:
+        if not constant_time_equals(service_token, settings.service_token):
             raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid service token")
         if x_workspace_id:
             ws = db.get(Workspace, x_workspace_id)
@@ -84,8 +87,8 @@ def get_principal(
     token = None
     if authorization and authorization.lower().startswith("bearer "):
         token = authorization[7:]
-    elif request.cookies.get("orkestr_token"):
-        token = request.cookies["orkestr_token"]
+    elif request.cookies.get(SESSION_COOKIE) or request.cookies.get(LEGACY_SESSION_COOKIE):
+        token = request.cookies.get(SESSION_COOKIE) or request.cookies[LEGACY_SESSION_COOKIE]
     if not token:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Not authenticated")
     try:
