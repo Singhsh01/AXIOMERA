@@ -1,6 +1,6 @@
 {
-  "ran_at": "2026-11-03 22:38:34",
-  "passed": 18,
+  "ran_at": "2026-11-04 01:44:39",
+  "passed": 19,
   "failed": 0,
   "cases": [
     {
@@ -9,7 +9,7 @@
       "role": "operator",
       "result": "pass",
       "evidence": "Landed on /app as Olivia Operator",
-      "seconds": 1.8
+      "seconds": 1.7
     },
     {
       "id": "AUTH-02",
@@ -33,7 +33,7 @@
       "role": "viewer",
       "result": "pass",
       "evidence": "Own history shows failed + successful attempts; org log is 403 for viewers",
-      "seconds": 1.8
+      "seconds": 2.0
     },
     {
       "id": "AUTH-05",
@@ -49,15 +49,15 @@
       "role": "operator \u2192 approver",
       "result": "pass",
       "evidence": "2 approvals decided by approver; operator decision refused (403); actions [('issue_refund', 'verified'), ('send_customer_email', 'verified')]; case \u2192 resolved",
-      "seconds": 14.4
+      "seconds": 15.3
     },
     {
       "id": "UC-02",
       "title": "Prompt-injection email is flagged and cannot auto-approve a refund",
       "role": "operator",
       "result": "pass",
-      "evidence": "case #1030 flagged (2 injection finding(s)); no action executed",
-      "seconds": 6.4
+      "evidence": "case #1058 flagged (2 injection finding(s)); no action executed",
+      "seconds": 6.7
     },
     {
       "id": "UC-03",
@@ -81,7 +81,7 @@
       "role": "operator",
       "result": "pass",
       "evidence": "6 workflows listed; graph rendered; node definition opened",
-      "seconds": 1.9
+      "seconds": 2.2
     },
     {
       "id": "UC-06",
@@ -89,7 +89,7 @@
       "role": "admin / operator",
       "result": "pass",
       "evidence": "operator read-only; unsafe policy \u2192 422; unchanged policy re-saved \u2192 200",
-      "seconds": 1.7
+      "seconds": 1.9
     },
     {
       "id": "UC-07",
@@ -97,7 +97,7 @@
       "role": "operator",
       "result": "pass",
       "evidence": "search for 'refund policy' returned passages",
-      "seconds": 3.7
+      "seconds": 4.9
     },
     {
       "id": "UC-08",
@@ -105,7 +105,7 @@
       "role": "all roles",
       "result": "pass",
       "evidence": "55 page renders across 5 roles, 0 console errors, 0 server errors",
-      "seconds": 48.8
+      "seconds": 54.3
     },
     {
       "id": "UC-09",
@@ -113,14 +113,14 @@
       "role": "viewer",
       "result": "pass",
       "evidence": "UI hides writes; API returns 403",
-      "seconds": 0.8
+      "seconds": 1.1
     },
     {
       "id": "UC-10",
       "title": "Audit chain verifies end to end",
       "role": "admin",
       "result": "pass",
-      "evidence": "/api/v1/audit/verify: {'valid': True, 'events': 634, 'head': '43c15dfea0a7e4add03228fb13234ec12f0331ae15129b560604b0420b4175eb'}",
+      "evidence": "/api/v1/audit/verify: {'valid': True, 'events': 1068, 'head': 'f9d5847de725f02ba0c4defb21122dbc1d4ed374dd9a1723d608b056fd904faa'}",
       "seconds": 0.1
     },
     {
@@ -128,8 +128,8 @@
       "title": "Landing page: brand, navigation and no horizontal scroll on phones",
       "role": "anonymous",
       "result": "pass",
-      "evidence": "title 'Axiomera \u2014 Autonomous Enterprise Operations & Proposal Intelligence Platform'; nav: Platform \u00b7 Request lifecycle \u00b7 Governance \u00b7 Evidence; mobile overflow 0px",
-      "seconds": 0.8
+      "evidence": "title 'Axiomera \u2014 Autonomous Enterprise Operations & Proposal Intelligence Platform'; nav: Two engines \u00b7 Request lifecycle \u00b7 Governance \u00b7 Demo journey; mobile overflow 0px",
+      "seconds": 1.3
     },
     {
       "id": "UX-02",
@@ -137,7 +137,7 @@
       "role": "operator",
       "result": "pass",
       "evidence": "command center fits 390px",
-      "seconds": 0.7
+      "seconds": 1.0
     },
     {
       "id": "UX-03",
@@ -145,12 +145,24 @@
       "role": "operator",
       "result": "pass",
       "evidence": "light \u2192 dark (body rgb(7, 10, 20)); persisted across navigation and reload; heading moved 0px",
-      "seconds": 2.5
+      "seconds": 3.7
+    },
+    {
+      "id": "UX-04",
+      "title": "Landing: scroll scenes alternate the theme, constellation paints, demo journey video is served",
+      "role": "anonymous",
+      "result": "pass",
+      "evidence": "constellation 50152 px; scenes ['base', 'alt', 'base', 'alt'] (alt background rgb(7, 10, 20)); journey.mp4 200; scene cleared on /login",
+      "seconds": 9.8
     }
   ],
   "console_errors": [
     {
       "url": "http://localhost:3000/login",
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    },
+    {
+      "url": "http://localhost:3000/app/cases",
       "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
     },
     {

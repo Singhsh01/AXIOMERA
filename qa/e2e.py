@@ -366,12 +366,12 @@ def t_landing(c: Ctx):
     c.shot(p, "ux-01-landing-mobile")
     d = c.page()
     d.goto(c.web)
-    for name in ["Platform", "Request lifecycle", "Governance", "Evidence"]:
+    for name in ["Two engines", "Request lifecycle", "Governance", "Demo journey"]:
         expect(d.get_by_role("banner").get_by_role("link", name=name, exact=True)).to_be_visible()
     c.shot(d, "ux-01-landing-desktop")
     assert over <= 1, f"horizontal overflow {over}px"
     assert "Axiomera" in d.title(), d.title()
-    return f"title '{d.title()}'; nav: Platform · Request lifecycle · Governance · Evidence; mobile overflow {over}px"
+    return f"title '{d.title()}'; nav: Two engines · Request lifecycle · Governance · Demo journey; mobile overflow {over}px"
 
 
 @case("UX-02", "App shell on a phone: menu opens, pages fit the width", "operator")
@@ -401,6 +401,26 @@ def t_theme(c: Ctx):
     c.shot(p, f"ux-03-theme-{flipped}")
     p.get_by_role("button", name="Switch to").first.click()  # restore
     return f"{start} → {flipped} (body {bg}); persisted across navigation and reload; heading moved 0px"
+
+
+@case("UX-04", "Landing: scroll scenes alternate the theme, constellation paints, demo journey video is served", "anonymous")
+def t_scenes(c: Ctx):
+    p = c.page()
+    p.goto(c.web); p.wait_for_timeout(1500)
+    painted = p.evaluate("""(() => { const cv = document.querySelector('canvas'); const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i]) n++; return n; })()""")
+    assert painted > 1000, f"constellation painted only {painted} px"
+    seen = []
+    for anchor in ["engines", "proposals", "lifecycle", "journey"]:
+        p.evaluate(f"document.getElementById('{anchor}').scrollIntoView({{block: 'start'}})"); p.wait_for_timeout(1200)
+        seen.append(p.evaluate("document.documentElement.dataset.scene || 'base'"))
+    assert seen == ["base", "alt", "base", "alt"], seen
+    bg = p.evaluate("getComputedStyle(document.body).backgroundColor")
+    c.shot(p, "ux-04-scene-alt")
+    status = httpx.head(c.web + "/media/journey.mp4").status_code
+    assert status == 200, status
+    p.goto(c.web + "/login"); p.wait_for_timeout(800)
+    assert p.evaluate("document.documentElement.dataset.scene || 'base'") == "base", "scene leaked onto the next page"
+    return f"constellation {painted} px; scenes {seen} (alt background {bg}); journey.mp4 200; scene cleared on /login"
 
 
 # ---------------------------------------------------------------- runner
