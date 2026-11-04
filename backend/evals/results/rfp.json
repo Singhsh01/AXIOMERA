@@ -3,7 +3,7 @@
   "title": "RFP intelligence",
   "provider": "fixture",
   "uses_fixtures": true,
-  "generated_at": "2026-11-03T21:40:48.987195+00:00",
+  "generated_at": "2026-11-04T01:52:35.554930+00:00",
   "metrics": {
     "extraction_recall": 1.0,
     "extraction_precision": 1.0,

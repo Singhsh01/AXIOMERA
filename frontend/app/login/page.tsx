@@ -12,17 +12,17 @@ import { post } from "@/lib/api";
 const LOGIN_HUBS = [{ label: "Operator", x: 0.25, y: 0.22 }, { label: "Approver", x: 0.7, y: 0.3 }, { label: "Reviewer", x: 0.45, y: 0.5 }, { label: "Admin", x: 0.8, y: 0.55 }];
 
 const DEMO = [
-  ["ops@orkestr.dev", "Olivia", "Operator", "Runs cases and tenders"],
-  ["approver@orkestr.dev", "Priya", "Approver", "Signs off refunds and emails"],
-  ["reviewer@orkestr.dev", "Rafael", "Reviewer", "Reviews proposals"],
-  ["admin@orkestr.dev", "Alex", "Admin", "Policies, integrations, large refunds"],
+  ["ops@axiomera.dev", "Olivia", "Operator", "Runs cases and tenders"],
+  ["approver@axiomera.dev", "Priya", "Approver", "Signs off refunds and emails"],
+  ["reviewer@axiomera.dev", "Rafael", "Reviewer", "Reviews proposals"],
+  ["admin@axiomera.dev", "Alex", "Admin", "Policies, integrations, large refunds"],
 ];
 
 function LoginForm() {
   const router = useRouter();
   const next = useSearchParams().get("next") || "/app";
-  const [email, setEmail] = useState("ops@orkestr.dev");
-  const [password, setPassword] = useState("orkestr-demo");
+  const [email, setEmail] = useState("ops@axiomera.dev");
+  const [password, setPassword] = useState("axiomera-demo");
   const [error, setError] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
 
@@ -60,7 +60,7 @@ function LoginForm() {
           <p className="mt-3 text-[15px] leading-relaxed text-ink-mute">Demo workspace. Pick a role to see what it can do; approvals and proposal reviews need a different person than the one who requested them.</p>
           <form onSubmit={submit} className="mt-9 space-y-5">
             <Field label="Email"><input className={inputCls} type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required /></Field>
-            <Field label="Password" hint="All demo accounts use orkestr-demo">
+            <Field label="Password" hint="All demo accounts use axiomera-demo">
               <input className={inputCls} type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </Field>
             <ErrorNote error={error} />
@@ -70,7 +70,7 @@ function LoginForm() {
             <p className="label mb-3">Demo accounts</p>
             <div className="grid border-l border-t border-line sm:grid-cols-2">
               {DEMO.map(([e, n, r, d]) => (
-                <button key={e} type="button" onClick={() => { setEmail(e); setPassword("orkestr-demo"); }}
+                <button key={e} type="button" onClick={() => { setEmail(e); setPassword("axiomera-demo"); }}
                   className={`focus-ring relative border-b border-r border-line px-4 py-3 text-left transition-colors ${email === e ? "bg-raised" : "hover:bg-raised/50"}`}>
                   {email === e && <span className="absolute inset-y-0 left-0 w-[2px] bg-ink" aria-hidden />}
                   <span className="block text-[13.5px] font-semibold">{n} <span className="font-normal text-ink-mute">· {r}</span></span>

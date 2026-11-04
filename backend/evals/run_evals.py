@@ -31,9 +31,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT.parent))
-os.environ.setdefault("ORKESTR_DATABASE_URL", os.environ.get("ORKESTR_EVAL_DATABASE_URL", "postgresql+psycopg://postgres@localhost:5432/orkestr_test"))
-os.environ.setdefault("ORKESTR_N8N_ENABLED", "false")
-os.environ.setdefault("ORKESTR_STORAGE_DIR", str(ROOT / "results" / ".storage"))
+os.environ.setdefault("AXIOMERA_DATABASE_URL", os.environ.get("AXIOMERA_EVAL_DATABASE_URL", "postgresql+psycopg://postgres@localhost:5432/axiomera_test"))
+os.environ.setdefault("AXIOMERA_N8N_ENABLED", "false")
+os.environ.setdefault("AXIOMERA_STORAGE_DIR", str(ROOT / "results" / ".storage"))
 
 from sqlalchemy import select, text  # noqa: E402
 
@@ -120,7 +120,7 @@ def suite_operations(ws: str) -> dict:
     from app.main import app
 
     client = TestClient(app)
-    svc = {"X-Orkestr-Service-Token": os.environ.get("ORKESTR_SERVICE_TOKEN", "dev-service-token"), "X-Orkestr-Workflow": "A", "X-Orkestr-Node": "Create Case",
+    svc = {"X-Axiomera-Service-Token": os.environ.get("AXIOMERA_SERVICE_TOKEN", "dev-service-token"), "X-Axiomera-Workflow": "A", "X-Axiomera-Node": "Create Case",
            "X-N8N-Execution-Id": f"eval-{uuid.uuid4().hex[:8]}"}
     mid = f"<eval-{uuid.uuid4()}@x>"
     body = {"message_id": mid, "from": "ben.hoffmann@example.com", "subject": "Eval duplicate", "body": f"Duplicate handling probe {uuid.uuid4()}"}
@@ -129,13 +129,13 @@ def suite_operations(ws: str) -> dict:
     resend = client.post("/api/v1/ingest/email", headers=svc, json={**body, "message_id": mid + "r", "subject": "RE: Eval duplicate"}).json()
     dup_ok = all(x["case_id"] == first["case_id"] and x["duplicate"] for x in [*replays, resend])
 
-    tok = client.post("/api/v1/auth/login", json={"email": "admin@orkestr.dev", "password": "orkestr-demo"}).json()["token"]
+    tok = client.post("/api/v1/auth/login", json={"email": "admin@axiomera.dev", "password": "axiomera-demo"}).json()["token"]
     adm = {"Authorization": f"Bearer {tok}"}
-    h = {**svc, "X-Orkestr-Workflow": "B", "X-N8N-Execution-Id": f"eval-{uuid.uuid4().hex[:8]}"}
-    inc = client.post("/api/v1/incidents", headers={**h, "X-Orkestr-Node": "Categorize"},
+    h = {**svc, "X-Axiomera-Workflow": "B", "X-N8N-Execution-Id": f"eval-{uuid.uuid4().hex[:8]}"}
+    inc = client.post("/api/v1/incidents", headers={**h, "X-Axiomera-Node": "Categorize"},
                       json={"event_id": f"eval-{uuid.uuid4().hex[:8]}", "title": f"Eval outage for all users {uuid.uuid4().hex[:6]}", "description": f"Production outage 503 probe {uuid.uuid4()}"}).json()
     client.post("/api/v1/integrations/jira/inject-failures", headers=adm, json={"count": 2})
-    codes = [client.post(f"/api/v1/cases/{inc['case_id']}/actions/create_jira_issue", headers={**h, "X-Orkestr-Node": "Create Jira Task"}).status_code for _ in range(3)]
+    codes = [client.post(f"/api/v1/cases/{inc['case_id']}/actions/create_jira_issue", headers={**h, "X-Axiomera-Node": "Create Jira Task"}).status_code for _ in range(3)]
     recovery_ok = codes == [503, 503, 200]
     from app.models import CaseAction
 
@@ -330,7 +330,7 @@ def suite_agents(ws: str) -> dict:
     _, rejected = req.merge_llm(pages, [], {1: llm_items}, [])
     checks["hallucinated_requirement_quotes_rejected"] = rejected == 2
 
-    judge = {"status": "skipped", "reason": "no live model provider configured (ORKESTR_LLM_PROVIDER=fixture)"}
+    judge = {"status": "skipped", "reason": "no live model provider configured (AXIOMERA_LLM_PROVIDER=fixture)"}
     prov = get_provider()
     if prov.name != "fixture":
         judge = _llm_judge(prov)

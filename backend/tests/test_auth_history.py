@@ -10,7 +10,7 @@ from app.models import Organization, User, Workspace, WorkspaceMember
 def _make_user(db, role="operator"):
     org = db.query(Organization).first()
     ws = db.query(Workspace).first()
-    email = f"qa-{uuid.uuid4().hex[:8]}@orkestr.dev"
+    email = f"qa-{uuid.uuid4().hex[:8]}@axiomera.dev"
     u = User(org_id=org.id, email=email, name="QA User", role=role, password_hash=hash_password("Correct-horse-1"))
     db.add(u)
     db.flush()

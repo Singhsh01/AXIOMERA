@@ -33,8 +33,8 @@ def test_api_calls_are_authenticated_and_retried(path):
         if n["type"] != "n8n-nodes-base.httpRequest":
             continue
         hdrs = {h["name"]: h["value"] for h in n["parameters"]["headerParameters"]["parameters"]}
-        assert hdrs["X-Orkestr-Service-Token"] == "={{ $env.ORKESTR_SERVICE_TOKEN }}"
-        assert hdrs["X-Orkestr-Node"] == n["name"], "node header must match node name for step correlation"
+        assert hdrs["X-Axiomera-Service-Token"] == "={{ $env.AXIOMERA_SERVICE_TOKEN }}"
+        assert hdrs["X-Axiomera-Node"] == n["name"], "node header must match node name for step correlation"
         assert hdrs["X-N8N-Execution-Id"] == "={{ $execution.id }}"
         assert n.get("retryOnFail") and n.get("maxTries", 0) >= 3
         assert n["parameters"]["options"]["timeout"] >= 30000

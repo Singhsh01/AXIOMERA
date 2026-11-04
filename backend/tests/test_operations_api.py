@@ -12,12 +12,12 @@ from app.ops.agents import validate_reply
 
 def _ingest(client, svc_h, sender, subject, body, mid=None):
     mid = mid or f"<{uuid.uuid4()}@mail.example.com>"
-    h = {**svc_h, "X-Orkestr-Node": "Create Case"}
+    h = {**svc_h, "X-Axiomera-Node": "Create Case"}
     return client.post("/api/v1/ingest/email", headers=h, json={"message_id": mid, "from": sender, "subject": subject, "body": body}), mid
 
 
 def _stage(client, svc_h, case_id, stage):
-    r = client.post(f"/api/v1/cases/{case_id}/{stage}", headers={**svc_h, "X-Orkestr-Node": stage})
+    r = client.post(f"/api/v1/cases/{case_id}/{stage}", headers={**svc_h, "X-Axiomera-Node": stage})
     assert r.status_code == 200, r.text
     return r.json()
 
@@ -25,7 +25,7 @@ def _stage(client, svc_h, case_id, stage):
 def test_requires_auth(client):
     client.cookies.clear()  # earlier logins in the session leave a cookie on the shared client
     assert client.get("/api/v1/cases").status_code == 401
-    assert client.get("/api/v1/cases", headers={"X-Orkestr-Service-Token": "wrong"}).status_code == 401
+    assert client.get("/api/v1/cases", headers={"X-Axiomera-Service-Token": "wrong"}).status_code == 401
 
 
 def test_viewer_cannot_write(client, viewer_h):
@@ -119,15 +119,15 @@ def test_large_refund_requires_admin(client, svc_h, approver_h, admin_h, ops_h):
 
 
 def test_incident_with_transient_jira_failure(client, admin_h, ops_h):
-    h = {"X-Orkestr-Service-Token": "dev-service-token", "X-N8N-Execution-Id": f"exec-{uuid.uuid4().hex[:6]}", "X-Orkestr-Workflow": "B"}
-    r = client.post("/api/v1/incidents", headers={**h, "X-Orkestr-Node": "Categorize"},
+    h = {"X-Axiomera-Service-Token": "dev-service-token", "X-N8N-Execution-Id": f"exec-{uuid.uuid4().hex[:6]}", "X-Axiomera-Workflow": "B"}
+    r = client.post("/api/v1/incidents", headers={**h, "X-Axiomera-Node": "Categorize"},
                     json={"event_id": f"alert-{uuid.uuid4().hex[:6]}", "title": "Payments API down for all users", "description": "Production outage, 503 errors"})
     assert r.status_code == 200 and r.json()["priority"] == "P1"
     cid = r.json()["case_id"]
-    client.post(f"/api/v1/cases/{cid}/research", headers={**h, "X-Orkestr-Node": "Retrieve Context"})
-    assert client.post(f"/api/v1/cases/{cid}/assign", headers={**h, "X-Orkestr-Node": "Assign Owner"}).json()["team"] == "sre"
+    client.post(f"/api/v1/cases/{cid}/research", headers={**h, "X-Axiomera-Node": "Retrieve Context"})
+    assert client.post(f"/api/v1/cases/{cid}/assign", headers={**h, "X-Axiomera-Node": "Assign Owner"}).json()["team"] == "sre"
     client.post("/api/v1/integrations/jira/inject-failures", headers=admin_h, json={"count": 1})
-    jira = {**h, "X-Orkestr-Node": "Create Jira Task"}
+    jira = {**h, "X-Axiomera-Node": "Create Jira Task"}
     first = client.post(f"/api/v1/cases/{cid}/actions/create_jira_issue", headers=jira)
     assert first.status_code == 503  # transient → n8n retries
     second = client.post(f"/api/v1/cases/{cid}/actions/create_jira_issue", headers=jira)
@@ -151,9 +151,9 @@ def test_sla_scan_escalates(client, db, svc_h):
     c.sla_due_at = utcnow() - timedelta(minutes=5)
     c.sla_breached = False
     db.commit()
-    res = client.post("/api/v1/ops/sla/scan", headers={**svc_h, "X-Orkestr-Workflow": "B", "X-Orkestr-Node": "Monitor SLA"}).json()
+    res = client.post("/api/v1/ops/sla/scan", headers={**svc_h, "X-Axiomera-Workflow": "B", "X-Axiomera-Node": "Monitor SLA"}).json()
     assert any(b["case_id"] == c.id for b in res["newly_breached"])
-    again = client.post("/api/v1/ops/sla/scan", headers={**svc_h, "X-Orkestr-Workflow": "B", "X-Orkestr-Node": "Monitor SLA"}).json()
+    again = client.post("/api/v1/ops/sla/scan", headers={**svc_h, "X-Axiomera-Workflow": "B", "X-Axiomera-Node": "Monitor SLA"}).json()
     assert not any(b["case_id"] == c.id for b in again["newly_breached"])  # escalated once
 
 
@@ -196,7 +196,7 @@ def test_reply_validator():
 def test_metrics_and_health(client):
     assert client.get("/health").json()["database"] is True
     m = client.get("/metrics").text
-    assert "orkestr_http_requests_total" in m and "orkestr_agent_runs_total" in m
+    assert "axiomera_http_requests_total" in m and "axiomera_agent_runs_total" in m
 
 
 def test_audit_chain_valid_after_flows(client, ops_h):
@@ -205,11 +205,11 @@ def test_audit_chain_valid_after_flows(client, ops_h):
 
 def test_dead_letter_records_entity_and_replays(client, admin_h, ops_h):
     exec_id = f"exec-{uuid.uuid4().hex[:6]}"
-    h = {"X-Orkestr-Service-Token": "dev-service-token", "X-N8N-Execution-Id": exec_id, "X-Orkestr-Workflow": "B"}
-    inc = client.post("/api/v1/incidents", headers={**h, "X-Orkestr-Node": "Categorize"},
+    h = {"X-Axiomera-Service-Token": "dev-service-token", "X-N8N-Execution-Id": exec_id, "X-Axiomera-Workflow": "B"}
+    inc = client.post("/api/v1/incidents", headers={**h, "X-Axiomera-Node": "Categorize"},
                       json={"event_id": f"dl-{uuid.uuid4().hex[:6]}", "title": f"Queue backlog for all users {uuid.uuid4().hex[:4]}", "description": "Production outage"}).json()
     client.post("/api/v1/integrations/slack/inject-failures", headers=admin_h, json={"count": 1})
-    assert client.post(f"/api/v1/cases/{inc['case_id']}/actions/post_slack_message", headers={**h, "X-Orkestr-Node": "Notify Slack"}).status_code == 503
+    assert client.post(f"/api/v1/cases/{inc['case_id']}/actions/post_slack_message", headers={**h, "X-Axiomera-Node": "Notify Slack"}).status_code == 503
     dl = client.post("/api/v1/workflow-events/error", headers=h, json={"workflow_name": "Axiomera B — Enterprise Incident Escalation", "workflow_id": "OrkB0IncidentEscl",
                                                                          "execution_id": exec_id, "last_node": "Notify Slack", "error": "Service unavailable"}).json()
     item = next(d for d in client.get("/api/v1/dead-letters", headers=ops_h).json() if d["id"] == dl["dead_letter_id"])

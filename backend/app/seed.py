@@ -17,14 +17,14 @@ from app.integrations.connectors import KINDS
 from app.platform import audit, knowledge
 
 SEED = Path(__file__).resolve().parents[1] / "seed"
-DEMO_PASSWORD = "orkestr-demo"
+DEMO_PASSWORD = "axiomera-demo"
 
 USERS = [
-    ("admin@orkestr.dev", "Alex Admin", "admin"),
-    ("ops@orkestr.dev", "Olivia Operator", "operator"),
-    ("approver@orkestr.dev", "Priya Approver", "approver"),
-    ("reviewer@orkestr.dev", "Rafael Reviewer", "reviewer"),
-    ("viewer@orkestr.dev", "Vera Viewer", "viewer"),
+    ("admin@axiomera.dev", "Alex Admin", "admin"),
+    ("ops@axiomera.dev", "Olivia Operator", "operator"),
+    ("approver@axiomera.dev", "Priya Approver", "approver"),
+    ("reviewer@axiomera.dev", "Rafael Reviewer", "reviewer"),
+    ("viewer@axiomera.dev", "Vera Viewer", "viewer"),
 ]
 
 
