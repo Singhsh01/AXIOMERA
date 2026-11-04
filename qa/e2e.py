@@ -4,6 +4,9 @@ Runs against a live stack (web on :3000, API on :8000, n8n, Postgres, Redis):
 
     python qa/e2e.py --web http://localhost:3000 --api http://localhost:8000
 
+AUTH-03 creates a throwaway user directly in the database, so set AXIOMERA_DATABASE_URL to the stack's
+database (for Docker Compose: postgresql+psycopg://axiomera:<POSTGRES_PASSWORD>@localhost:5433/axiomera).
+
 Each case records pass/fail, evidence and timing to qa/results.json, and writes screenshots to qa/screens/.
 Console errors and 5xx responses are collected on every page and reported as defects.
 """
@@ -21,7 +24,7 @@ from playwright.sync_api import Page, expect, sync_playwright
 
 HERE = Path(__file__).resolve().parent
 SHOTS = HERE / "screens"
-PW = "orkestr-demo"
+PW = "axiomera-demo"
 THEME = "light"
 RESULTS: list[dict] = []
 CONSOLE: list[dict] = []
@@ -41,7 +44,7 @@ class Ctx:
         self.states: dict = {}
 
     def token(self, who: str) -> dict:
-        r = self.http.post("/api/v1/auth/login", json={"email": f"{who}@orkestr.dev", "password": PW})
+        r = self.http.post("/api/v1/auth/login", json={"email": f"{who}@axiomera.dev", "password": PW})
         r.raise_for_status()
         return {"Authorization": f"Bearer {r.json()['token']}"}
 
@@ -57,7 +60,7 @@ class Ctx:
             p.goto(f"{self.web}/app"); p.wait_for_url("**/app", timeout=15000)
         elif who:
             p.goto(f"{self.web}/login")
-            p.get_by_label("Email").fill(f"{who}@orkestr.dev")
+            p.get_by_label("Email").fill(f"{who}@axiomera.dev")
             p.get_by_label("Password").fill(PW)
             p.get_by_role("button", name="Sign in").click()
             p.wait_for_url("**/app", timeout=15000)
@@ -84,7 +87,7 @@ def t_login(c: Ctx):
 def t_bad_login(c: Ctx):
     p = c.page()
     p.goto(f"{c.web}/login")
-    p.get_by_label("Email").fill("viewer@orkestr.dev")
+    p.get_by_label("Email").fill("viewer@axiomera.dev")
     p.get_by_label("Password").fill("not-the-password")
     p.get_by_role("button", name="Sign in").click()
     alert = p.get_by_text("Invalid email or password")
@@ -97,7 +100,7 @@ def t_bad_login(c: Ctx):
 @case("AUTH-03", "Five wrong passwords lock the account; the correct password is then refused (423)", "anonymous")
 def t_lockout(c: Ctx):
     adm = c.token("admin")
-    email = f"qa-lock-{uuid.uuid4().hex[:6]}@orkestr.dev"
+    email = f"qa-lock-{uuid.uuid4().hex[:6]}@axiomera.dev"
     # create a throwaway user through the admin API if available, else use a seeded one
     me = c.http.get("/api/v1/auth/me", headers=adm).json()
     import sys
@@ -107,7 +110,7 @@ def t_lockout(c: Ctx):
     from app.models import User, WorkspaceMember
 
     db = session_factory()()
-    u = User(org_id=me.get("org_id") or db.query(User).filter(User.email == "admin@orkestr.dev").one().org_id,
+    u = User(org_id=me.get("org_id") or db.query(User).filter(User.email == "admin@axiomera.dev").one().org_id,
              email=email, name="QA Lockout", role="viewer", password_hash=hash_password(PW))
     db.add(u); db.flush(); db.add(WorkspaceMember(workspace_id=me["workspace"]["id"], user_id=u.id)); db.commit()
     codes = [c.http.post("/api/v1/auth/login", json={"email": email, "password": "wrong"}).status_code for _ in range(5)]
@@ -130,7 +133,7 @@ def t_lockout(c: Ctx):
 
 @case("AUTH-04", "Login history: every attempt is listed with result, IP and device", "viewer")
 def t_history(c: Ctx):
-    c.http.post("/api/v1/auth/login", json={"email": "viewer@orkestr.dev", "password": "typo"})
+    c.http.post("/api/v1/auth/login", json={"email": "viewer@axiomera.dev", "password": "typo"})
     p = c.page("viewer")
     p.goto(f"{c.web}/app/access")
     expect(p.get_by_role("heading", name="Access log")).to_be_visible()

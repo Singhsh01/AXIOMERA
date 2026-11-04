@@ -18,7 +18,7 @@ def main():
             ctx = b.new_context(viewport={"width": 1440, "height": 900}, device_scale_factor=1)
             ctx.add_init_script(f"try{{localStorage.setItem('axiomera-theme','{theme}')}}catch(e){{}}")
             p = ctx.new_page()
-            p.goto(f"{W}/login"); p.get_by_label("Email").fill("approver@orkestr.dev"); p.get_by_label("Password").fill("orkestr-demo")
+            p.goto(f"{W}/login"); p.get_by_label("Email").fill("approver@axiomera.dev"); p.get_by_label("Password").fill("axiomera-demo")
             p.get_by_role("button", name="Sign in").click(); p.wait_for_url("**/app"); p.wait_for_timeout(4000)
             shots = {"command-center": None, "observability": f"{W}/app/observability"}
             for name, url in shots.items():

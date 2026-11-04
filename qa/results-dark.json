@@ -1,5 +1,5 @@
 {
-  "ran_at": "2026-11-04 01:46:30",
+  "ran_at": "2026-11-04 03:05:57",
   "passed": 19,
   "failed": 0,
   "cases": [
@@ -25,7 +25,7 @@
       "role": "anonymous",
       "result": "pass",
       "evidence": "401\u00d75 \u2192 423 while locked \u2192 admin unlocked in UI \u2192 200",
-      "seconds": 2.9
+      "seconds": 3.0
     },
     {
       "id": "AUTH-04",
@@ -33,7 +33,7 @@
       "role": "viewer",
       "result": "pass",
       "evidence": "Own history shows failed + successful attempts; org log is 403 for viewers",
-      "seconds": 1.9
+      "seconds": 2.0
     },
     {
       "id": "AUTH-05",
@@ -49,15 +49,15 @@
       "role": "operator \u2192 approver",
       "result": "pass",
       "evidence": "2 approvals decided by approver; operator decision refused (403); actions [('issue_refund', 'verified'), ('send_customer_email', 'verified')]; case \u2192 resolved",
-      "seconds": 14.8
+      "seconds": 15.0
     },
     {
       "id": "UC-02",
       "title": "Prompt-injection email is flagged and cannot auto-approve a refund",
       "role": "operator",
       "result": "pass",
-      "evidence": "case #1060 flagged (2 injection finding(s)); no action executed",
-      "seconds": 6.5
+      "evidence": "case #1073 flagged (2 injection finding(s)); no action executed",
+      "seconds": 6.8
     },
     {
       "id": "UC-03",
@@ -73,7 +73,7 @@
       "role": "reviewer",
       "result": "pass",
       "evidence": "24 requirement rows rendered with evidence panel",
-      "seconds": 3.0
+      "seconds": 2.5
     },
     {
       "id": "UC-05",
@@ -81,7 +81,7 @@
       "role": "operator",
       "result": "pass",
       "evidence": "6 workflows listed; graph rendered; node definition opened",
-      "seconds": 2.4
+      "seconds": 2.1
     },
     {
       "id": "UC-06",
@@ -89,7 +89,7 @@
       "role": "admin / operator",
       "result": "pass",
       "evidence": "operator read-only; unsafe policy \u2192 422; unchanged policy re-saved \u2192 200",
-      "seconds": 2.0
+      "seconds": 2.6
     },
     {
       "id": "UC-07",
@@ -97,7 +97,7 @@
       "role": "operator",
       "result": "pass",
       "evidence": "search for 'refund policy' returned passages",
-      "seconds": 4.6
+      "seconds": 4.0
     },
     {
       "id": "UC-08",
@@ -105,7 +105,7 @@
       "role": "all roles",
       "result": "pass",
       "evidence": "55 page renders across 5 roles, 0 console errors, 0 server errors",
-      "seconds": 53.5
+      "seconds": 53.2
     },
     {
       "id": "UC-09",
@@ -120,7 +120,7 @@
       "title": "Audit chain verifies end to end",
       "role": "admin",
       "result": "pass",
-      "evidence": "/api/v1/audit/verify: {'valid': True, 'events': 1108, 'head': '35c2ba8cff99ce7c4f4e8b768a481b9cd4137f98eb5f39f9ebac47006f3bf583'}",
+      "evidence": "/api/v1/audit/verify: {'valid': True, 'events': 1342, 'head': '27e894272fbec83569f7c186d4088caf5c1919857beda929f91545e07daf39a5'}",
       "seconds": 0.1
     },
     {
@@ -129,7 +129,7 @@
       "role": "anonymous",
       "result": "pass",
       "evidence": "title 'Axiomera \u2014 Autonomous Enterprise Operations & Proposal Intelligence Platform'; nav: Two engines \u00b7 Request lifecycle \u00b7 Governance \u00b7 Demo journey; mobile overflow 0px",
-      "seconds": 1.1
+      "seconds": 1.4
     },
     {
       "id": "UX-02",
@@ -137,7 +137,7 @@
       "role": "operator",
       "result": "pass",
       "evidence": "command center fits 390px",
-      "seconds": 1.0
+      "seconds": 0.8
     },
     {
       "id": "UX-03",
@@ -145,15 +145,15 @@
       "role": "operator",
       "result": "pass",
       "evidence": "dark \u2192 light (body rgb(244, 240, 232)); persisted across navigation and reload; heading moved 0px",
-      "seconds": 3.2
+      "seconds": 3.9
     },
     {
       "id": "UX-04",
       "title": "Landing: scroll scenes alternate the theme, constellation paints, demo journey video is served",
       "role": "anonymous",
       "result": "pass",
-      "evidence": "constellation 50695 px; scenes ['base', 'alt', 'base', 'alt'] (alt background rgb(244, 240, 232)); journey.mp4 200; scene cleared on /login",
-      "seconds": 8.5
+      "evidence": "constellation 50718 px; scenes ['base', 'alt', 'base', 'alt'] (alt background rgb(244, 240, 232)); journey.mp4 200; scene cleared on /login",
+      "seconds": 8.1
     }
   ],
   "console_errors": [

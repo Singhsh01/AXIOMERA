@@ -8,7 +8,7 @@ and occasionally analytics and the workflow list, with 1.5–3 s of think time b
     cd backend && python ../scripts/loadtest.py --users 500 --duration 45
     python ../scripts/loadtest.py --users 1000 --duration 45 --base http://localhost:8000
 
-Accounts are created as `viewer` users named loadtest-NNNN@orkestr.dev (read-only) and tokens are
+Accounts are created as `viewer` users named loadtest-NNNN@axiomera.dev (read-only) and tokens are
 minted directly, so the run is not throttled by the login rate limit. --cleanup removes them.
 """
 from __future__ import annotations
@@ -47,11 +47,11 @@ def prepare_users(n: int) -> list[str]:
     db = session_factory()()
     org = db.scalars(select(Organization).where(Organization.slug == "helix-ridge")).one()
     ws = db.scalars(select(Workspace).where(Workspace.org_id == org.id)).first()
-    existing = {u.email: u for u in db.scalars(select(User).where(User.email.like("loadtest-%@orkestr.dev")))}
+    existing = {u.email: u for u in db.scalars(select(User).where(User.email.like("loadtest-%@axiomera.dev")))}
     pw = hash_password("loadtest-not-for-login")
     tokens = []
     for i in range(n):
-        email = f"loadtest-{i:04d}@orkestr.dev"
+        email = f"loadtest-{i:04d}@axiomera.dev"
         u = existing.get(email)
         if u is None:
             u = User(org_id=org.id, email=email, name=f"Load {i}", role="viewer", password_hash=pw)
@@ -71,7 +71,7 @@ def cleanup() -> None:
     from app.models import User, WorkspaceMember
 
     db = session_factory()()
-    ids = [u.id for u in db.scalars(select(User).where(User.email.like("loadtest-%@orkestr.dev")))]
+    ids = [u.id for u in db.scalars(select(User).where(User.email.like("loadtest-%@axiomera.dev")))]
     db.execute(delete(WorkspaceMember).where(WorkspaceMember.user_id.in_(ids)))
     db.execute(delete(User).where(User.id.in_(ids)))
     db.commit()

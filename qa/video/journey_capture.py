@@ -12,7 +12,7 @@ from pathlib import Path
 import httpx
 from playwright.sync_api import sync_playwright
 
-WEB, API, PW = "http://localhost:3000", "http://localhost:8000", "orkestr-demo"
+WEB, API, PW = "http://localhost:3000", "http://localhost:8000", "axiomera-demo"
 OUT = Path(sys.argv[1] if len(sys.argv) > 1 else "frames"); OUT.mkdir(parents=True, exist_ok=True)
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "backend"))
 
@@ -47,7 +47,7 @@ http = httpx.Client(base_url=API, timeout=60)
 
 
 def tok(who):
-    return {"Authorization": "Bearer " + http.post("/api/v1/auth/login", json={"email": f"{who}@orkestr.dev", "password": PW}).json()["token"]}
+    return {"Authorization": "Bearer " + http.post("/api/v1/auth/login", json={"email": f"{who}@axiomera.dev", "password": PW}).json()["token"]}
 
 
 def snap(page, name, tag, text, secs, top=False):
@@ -83,7 +83,7 @@ with sync_playwright() as pw:
 
     def as_user(who, theme="light"):
         p = new(theme)
-        p.goto(WEB + "/login"); p.get_by_label("Email").fill(f"{who}@orkestr.dev"); p.get_by_label("Password").fill(PW)
+        p.goto(WEB + "/login"); p.get_by_label("Email").fill(f"{who}@axiomera.dev"); p.get_by_label("Password").fill(PW)
         p.get_by_role("button", name="Sign in").click(); p.wait_for_url("**/app"); p.wait_for_timeout(1500)
         return p
 
@@ -172,9 +172,9 @@ with sync_playwright() as pw:
     from app.core.security import hash_password
     from app.db import session_factory
     from app.models import User, WorkspaceMember
-    db = session_factory()(); admin_u = db.query(User).filter(User.email == "admin@orkestr.dev").one()
+    db = session_factory()(); admin_u = db.query(User).filter(User.email == "admin@axiomera.dev").one()
     ws = db.query(WorkspaceMember).filter(WorkspaceMember.user_id == admin_u.id).first().workspace_id
-    email = f"j.doe-{uuid.uuid4().hex[:4]}@orkestr.dev"
+    email = f"j.doe-{uuid.uuid4().hex[:4]}@axiomera.dev"
     u = User(org_id=admin_u.org_id, email=email, name="Jordan Doe", role="viewer", password_hash=hash_password(PW)); db.add(u); db.flush()
     db.add(WorkspaceMember(workspace_id=ws, user_id=u.id)); db.commit()
     for _ in range(6): http.post("/api/v1/auth/login", json={"email": email, "password": "guess"}, headers={"X-Forwarded-For": "203.0.113.7"})

@@ -28,7 +28,7 @@ def main():
         ctx0.add_init_script(f"try{{localStorage.setItem('axiomera-theme','{a.theme}')}}catch(e){{}}")
         pg = ctx0.new_page()
         pg.goto(W); pg.wait_for_timeout(3200); save(pg, "landing")
-        pg.goto(f"{W}/login"); pg.get_by_label("Email").fill("approver@orkestr.dev"); pg.get_by_label("Password").fill("orkestr-demo")
+        pg.goto(f"{W}/login"); pg.get_by_label("Email").fill("approver@axiomera.dev"); pg.get_by_label("Password").fill("axiomera-demo")
         pg.get_by_role("button", name="Sign in").click(); pg.wait_for_url("**/app"); pg.wait_for_timeout(4000); save(pg, "command")
         for name, url, wait in [("approvals", "/app/approvals", 2500), ("workflow-a", "/app/workflows/A", 3500), ("agents", "/app/agents", 3000),
                                 ("observability", "/app/observability", 3500), ("integrations", "/app/integrations", 2500),

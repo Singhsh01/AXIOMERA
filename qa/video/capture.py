@@ -4,7 +4,7 @@ from pathlib import Path
 import httpx
 from playwright.sync_api import sync_playwright
 
-WEB, API, PW = "http://localhost:3000", "http://localhost:8000", "orkestr-demo"
+WEB, API, PW = "http://localhost:3000", "http://localhost:8000", "axiomera-demo"
 OUT = Path(sys.argv[1] if len(sys.argv) > 1 else "frames"); OUT.mkdir(parents=True, exist_ok=True)
 CAP = """(([step, text, top]) => {
   document.getElementById('qa-cap')?.remove();
@@ -18,7 +18,7 @@ CAP = """(([step, text, top]) => {
 })"""
 
 def login(page, who):
-    page.goto(f"{WEB}/login"); page.get_by_label("Email").fill(f"{who}@orkestr.dev"); page.get_by_label("Password").fill(PW)
+    page.goto(f"{WEB}/login"); page.get_by_label("Email").fill(f"{who}@axiomera.dev"); page.get_by_label("Password").fill(PW)
     page.get_by_role("button", name="Sign in").click(); page.wait_for_url("**/app"); page.wait_for_timeout(2500)
 
 def snap(page, name, step, text, top=False):
@@ -26,7 +26,7 @@ def snap(page, name, step, text, top=False):
     page.screenshot(path=str(OUT / f"{name}.jpg"), type="jpeg", quality=92)
 
 http = httpx.Client(base_url=API, timeout=30)
-tok = lambda who: {"Authorization": "Bearer " + http.post("/api/v1/auth/login", json={"email": f"{who}@orkestr.dev", "password": PW}).json()["token"]}
+tok = lambda who: {"Authorization": "Bearer " + http.post("/api/v1/auth/login", json={"email": f"{who}@axiomera.dev", "password": PW}).json()["token"]}
 
 with sync_playwright() as pw:
     b = pw.chromium.launch()

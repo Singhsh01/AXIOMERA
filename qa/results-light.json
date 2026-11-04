@@ -1,5 +1,5 @@
 {
-  "ran_at": "2026-11-04 01:44:39",
+  "ran_at": "2026-11-04 03:04:06",
   "passed": 19,
   "failed": 0,
   "cases": [
@@ -9,7 +9,7 @@
       "role": "operator",
       "result": "pass",
       "evidence": "Landed on /app as Olivia Operator",
-      "seconds": 1.7
+      "seconds": 1.8
     },
     {
       "id": "AUTH-02",
@@ -17,7 +17,7 @@
       "role": "anonymous",
       "result": "pass",
       "evidence": "Alert shown: 'Invalid email or password'",
-      "seconds": 1.3
+      "seconds": 1.4
     },
     {
       "id": "AUTH-03",
@@ -25,7 +25,7 @@
       "role": "anonymous",
       "result": "pass",
       "evidence": "401\u00d75 \u2192 423 while locked \u2192 admin unlocked in UI \u2192 200",
-      "seconds": 2.9
+      "seconds": 3.0
     },
     {
       "id": "AUTH-04",
@@ -41,7 +41,7 @@
       "role": "operator",
       "result": "pass",
       "evidence": "Redirected to /login after sign-out",
-      "seconds": 0.8
+      "seconds": 0.9
     },
     {
       "id": "UC-01",
@@ -49,15 +49,15 @@
       "role": "operator \u2192 approver",
       "result": "pass",
       "evidence": "2 approvals decided by approver; operator decision refused (403); actions [('issue_refund', 'verified'), ('send_customer_email', 'verified')]; case \u2192 resolved",
-      "seconds": 15.3
+      "seconds": 14.8
     },
     {
       "id": "UC-02",
       "title": "Prompt-injection email is flagged and cannot auto-approve a refund",
       "role": "operator",
       "result": "pass",
-      "evidence": "case #1058 flagged (2 injection finding(s)); no action executed",
-      "seconds": 6.7
+      "evidence": "case #1071 flagged (2 injection finding(s)); no action executed",
+      "seconds": 6.6
     },
     {
       "id": "UC-03",
@@ -73,7 +73,7 @@
       "role": "reviewer",
       "result": "pass",
       "evidence": "24 requirement rows rendered with evidence panel",
-      "seconds": 2.5
+      "seconds": 2.7
     },
     {
       "id": "UC-05",
@@ -81,7 +81,7 @@
       "role": "operator",
       "result": "pass",
       "evidence": "6 workflows listed; graph rendered; node definition opened",
-      "seconds": 2.2
+      "seconds": 2.1
     },
     {
       "id": "UC-06",
@@ -97,7 +97,7 @@
       "role": "operator",
       "result": "pass",
       "evidence": "search for 'refund policy' returned passages",
-      "seconds": 4.9
+      "seconds": 4.1
     },
     {
       "id": "UC-08",
@@ -105,7 +105,7 @@
       "role": "all roles",
       "result": "pass",
       "evidence": "55 page renders across 5 roles, 0 console errors, 0 server errors",
-      "seconds": 54.3
+      "seconds": 54.5
     },
     {
       "id": "UC-09",
@@ -120,8 +120,8 @@
       "title": "Audit chain verifies end to end",
       "role": "admin",
       "result": "pass",
-      "evidence": "/api/v1/audit/verify: {'valid': True, 'events': 1068, 'head': 'f9d5847de725f02ba0c4defb21122dbc1d4ed374dd9a1723d608b056fd904faa'}",
-      "seconds": 0.1
+      "evidence": "/api/v1/audit/verify: {'valid': True, 'events': 1302, 'head': 'f973d08c906cc854f7c9e6e0cdf5ca14aab7e3bec89615e6d765e7490e482b75'}",
+      "seconds": 0.2
     },
     {
       "id": "UX-01",
@@ -152,8 +152,8 @@
       "title": "Landing: scroll scenes alternate the theme, constellation paints, demo journey video is served",
       "role": "anonymous",
       "result": "pass",
-      "evidence": "constellation 50152 px; scenes ['base', 'alt', 'base', 'alt'] (alt background rgb(7, 10, 20)); journey.mp4 200; scene cleared on /login",
-      "seconds": 9.8
+      "evidence": "constellation 50713 px; scenes ['base', 'alt', 'base', 'alt'] (alt background rgb(7, 10, 20)); journey.mp4 200; scene cleared on /login",
+      "seconds": 8.5
     }
   ],
   "console_errors": [
