@@ -4,13 +4,15 @@
 #   docker compose --profile observability up -d         + OpenTelemetry collector, Jaeger, Prometheus
 #
 # n8n and the API bind to 127.0.0.1 only; the n8n editor is not exposed beyond this machine.
-name: orkestr  # kept on purpose: existing Docker volumes (database, n8n data) are named after the project
+# Project name decides the volume names (database, n8n data, uploads). Installations created before the
+# rename keep their data by setting COMPOSE_PROJECT_NAME=orkestr in .env (see docs/naming-audit.md).
+name: axiomera
 
 x-n8n-env: &n8n-env
   N8N_DIAGNOSTICS_ENABLED: "false"
   N8N_PERSONALIZATION_ENABLED: "false"
   N8N_VERSION_NOTIFICATIONS_ENABLED: "false"
-  N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"     # workflows read ORKESTR_* via $env
+  N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"     # workflows read AXIOMERA_* via $env
   NODE_FUNCTION_ALLOW_BUILTIN: "crypto"     # HMAC verification in Code nodes
   N8N_RUNNERS_ENABLED: "true"
   N8N_SECURE_COOKIE: "false"                # localhost only; enable behind TLS
@@ -20,22 +22,27 @@ x-n8n-env: &n8n-env
   GENERIC_TIMEZONE: ${TZ:-Europe/Berlin}
   EXECUTIONS_DATA_PRUNE: "true"
   EXECUTIONS_DATA_MAX_AGE: "336"
+  AXIOMERA_API_URL: http://api:8000
+  AXIOMERA_SERVICE_TOKEN: ${AXIOMERA_SERVICE_TOKEN:-dev-service-token}
+  AXIOMERA_WEBHOOK_SECRET: ${AXIOMERA_WEBHOOK_SECRET:-dev-webhook-secret}
+  # Legacy names for n8n executions that started under workflow versions from before the rename
+  # (they resume with the code they started with). Safe to remove once no such execution is waiting.
   ORKESTR_API_URL: http://api:8000
-  ORKESTR_SERVICE_TOKEN: ${ORKESTR_SERVICE_TOKEN:-dev-service-token}
-  ORKESTR_WEBHOOK_SECRET: ${ORKESTR_WEBHOOK_SECRET:-dev-webhook-secret}
+  ORKESTR_SERVICE_TOKEN: ${AXIOMERA_SERVICE_TOKEN:-dev-service-token}
+  ORKESTR_WEBHOOK_SECRET: ${AXIOMERA_WEBHOOK_SECRET:-dev-webhook-secret}
 
 services:
   postgres:
     image: pgvector/pgvector:pg16
     environment:
-      POSTGRES_USER: orkestr
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-orkestr}
-      POSTGRES_DB: orkestr
+      POSTGRES_USER: ${POSTGRES_USER:-axiomera}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-axiomera}
+      POSTGRES_DB: ${POSTGRES_DB:-axiomera}
     command: ["postgres", "-c", "shared_buffers=128MB", "-c", "max_connections=120"]
     volumes: [pgdata:/var/lib/postgresql/data]
     ports: ["127.0.0.1:${POSTGRES_HOST_PORT:-5433}:5432"]   # host port only for local tools; containers use postgres:5432
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U orkestr"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
       interval: 5s
       retries: 20
     mem_limit: 512m
@@ -46,13 +53,13 @@ services:
       - path: .env
         required: false
     environment:
-      ORKESTR_DATABASE_URL: postgresql+psycopg://orkestr:${POSTGRES_PASSWORD:-orkestr}@postgres:5432/orkestr
-      ORKESTR_N8N_BASE_URL: http://n8n:5678
-      ORKESTR_CORS_ORIGINS: '["http://localhost:3000"]'
-      ORKESTR_OTEL_ENDPOINT: ${ORKESTR_OTEL_ENDPOINT:-}
-      ORKESTR_REDIS_URL: redis://redis:6379/0        # shared cache + rate limits across workers
+      AXIOMERA_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-axiomera}:${POSTGRES_PASSWORD:-axiomera}@postgres:5432/${POSTGRES_DB:-axiomera}
+      AXIOMERA_N8N_BASE_URL: http://n8n:5678
+      AXIOMERA_CORS_ORIGINS: '["http://localhost:3000"]'
+      AXIOMERA_OTEL_ENDPOINT: ${AXIOMERA_OTEL_ENDPOINT:-}
+      AXIOMERA_REDIS_URL: redis://redis:6379/0        # shared cache + rate limits across workers
       WEB_CONCURRENCY: ${WEB_CONCURRENCY:-2}          # API worker processes (raise on bigger machines)
-      ORKESTR_DB_POOL_SIZE: ${ORKESTR_DB_POOL_SIZE:-10}
+      AXIOMERA_DB_POOL_SIZE: ${AXIOMERA_DB_POOL_SIZE:-10}
     volumes:
       - ./n8n/workflows:/workflows:ro
       - storage:/data/storage
@@ -94,9 +101,9 @@ services:
   web:
     build:
       context: ./frontend
-      args: { ORKESTR_API_URL: http://api:8000 }
+      args: { AXIOMERA_API_URL: http://api:8000 }
     environment:
-      ORKESTR_API_URL: http://api:8000
+      AXIOMERA_API_URL: http://api:8000
     ports: ["127.0.0.1:3000:3000"]
     depends_on:
       api: { condition: service_healthy }

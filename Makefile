@@ -1,4 +1,4 @@
-# Orkestr developer commands
+# Axiomera developer commands
 .PHONY: help up down logs ps test eval workflows demo dev-api dev-web n8n-import fmt
 
 help:            ## Show commands

@@ -5,7 +5,7 @@
 /* ------------------------------------------------------------------ tokens
    Channels only ("R G B") so Tailwind alpha modifiers work: bg-accent/10.
    Light = "Travertine": warm ivory and stone, rich black type, bronze accent.
-   Dark  = the original Orkestr night palette, preserved. */
+   Dark  = the original night palette (from before the Axiomera rebrand), preserved. */
 :root,
 :root[data-theme="light"]:not([data-scene="alt"]),
 :root[data-theme="dark"][data-scene="alt"],

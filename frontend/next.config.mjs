@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
-const api = process.env.ORKESTR_API_URL || "http://localhost:8000";
+// AXIOMERA_API_URL; the pre-rename ORKESTR_API_URL is still honoured.
+const api = process.env.AXIOMERA_API_URL || process.env.ORKESTR_API_URL || "http://localhost:8000";
 export default {
   output: "standalone",
   reactStrictMode: true,

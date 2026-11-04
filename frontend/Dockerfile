@@ -10,8 +10,8 @@ WORKDIR /srv/web
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /srv/web/node_modules ./node_modules
 COPY . .
-ARG ORKESTR_API_URL=http://api:8000
-ENV ORKESTR_API_URL=$ORKESTR_API_URL
+ARG AXIOMERA_API_URL=http://api:8000
+ENV AXIOMERA_API_URL=$AXIOMERA_API_URL
 RUN npm run build
 
 FROM node:22-alpine
