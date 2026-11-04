@@ -7,4 +7,4 @@ for id in OrkA0CustomerIntk OrkB0IncidentEscl OrkC0RfpProcessng OrkD0DeadlineMnt
   n8n update:workflow --id=$id --active=true
 done
 n8n update:workflow --id=OrkZ0ErrorHandler --active=false
-echo "Orkestr workflows imported and activated"
+echo "Axiomera workflows imported and activated"

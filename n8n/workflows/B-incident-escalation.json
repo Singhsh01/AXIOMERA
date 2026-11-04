@@ -1,6 +1,6 @@
 {
   "id": "OrkB0IncidentEscl",
-  "name": "Orkestr B \u2014 Enterprise Incident Escalation",
+  "name": "Axiomera B \u2014 Enterprise Incident Escalation",
   "active": true,
   "nodes": [
     {
@@ -431,6 +431,55 @@
       ]
     },
     {
+      "name": "Duplicate Linked",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/workflow-events",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Orkestr-Service-Token",
+              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+            },
+            {
+              "name": "X-N8N-Execution-Id",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "X-Orkestr-Workflow",
+              "value": "B"
+            },
+            {
+              "name": "X-Orkestr-Node",
+              "value": "Duplicate Linked"
+            },
+            {
+              "name": "X-Correlation-Id",
+              "value": "={{ $('Verify Signature').first().json.correlation_id }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ workflow: 'B', node: 'Duplicate Linked', status: 'succeeded', correlation_id: $('Verify Signature').first().json.correlation_id, finish: true, entity_type: 'case', entity_id: $('Categorize').first().json.case_id, detail: { reason: 'open incident for the same service already exists' } }) }}"
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "executeOnce": true,
+      "id": "fb9ee799-3ad4-5527-b1d4-3433cc68ac3d",
+      "position": [
+        1320,
+        200
+      ]
+    },
+    {
       "name": "SLA Monitor (10 min)",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
@@ -741,6 +790,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Duplicate Linked",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -872,7 +928,7 @@
     "errorWorkflow": "OrkZ0ErrorHandler"
   },
   "pinData": {},
-  "versionId": "d1649f04-5ffd-5e7d-bfd8-cc2016dd0ca1",
+  "versionId": "a1dd9b2d-bd48-55a5-b53e-467b4e42a762",
   "meta": {
     "templateCredsSetupCompleted": true
   },

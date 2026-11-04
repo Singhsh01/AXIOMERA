@@ -210,7 +210,7 @@ def test_dead_letter_records_entity_and_replays(client, admin_h, ops_h):
                       json={"event_id": f"dl-{uuid.uuid4().hex[:6]}", "title": f"Queue backlog for all users {uuid.uuid4().hex[:4]}", "description": "Production outage"}).json()
     client.post("/api/v1/integrations/slack/inject-failures", headers=admin_h, json={"count": 1})
     assert client.post(f"/api/v1/cases/{inc['case_id']}/actions/post_slack_message", headers={**h, "X-Orkestr-Node": "Notify Slack"}).status_code == 503
-    dl = client.post("/api/v1/workflow-events/error", headers=h, json={"workflow_name": "Orkestr B — Enterprise Incident Escalation", "workflow_id": "OrkB0IncidentEscl",
+    dl = client.post("/api/v1/workflow-events/error", headers=h, json={"workflow_name": "Axiomera B — Enterprise Incident Escalation", "workflow_id": "OrkB0IncidentEscl",
                                                                          "execution_id": exec_id, "last_node": "Notify Slack", "error": "Service unavailable"}).json()
     item = next(d for d in client.get("/api/v1/dead-letters", headers=ops_h).json() if d["id"] == dl["dead_letter_id"])
     assert item["payload"]["case_id"] == inc["case_id"]

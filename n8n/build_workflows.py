@@ -103,7 +103,7 @@ class WF:
                     "saveManualExecutions": True, "callerPolicy": "workflowsFromSameOwner", "executionTimeout": 900}
         if self.key != "Z":
             settings["errorWorkflow"] = IDS["Z"]
-        return {"id": IDS[self.key], "name": f"Orkestr {self.key} — {self.name}", "active": self.key != "Z", "nodes": self.nodes,
+        return {"id": IDS[self.key], "name": f"Axiomera {self.key} — {self.name}", "active": self.key != "Z", "nodes": self.nodes,
                 "connections": self.connections, "settings": settings, "pinData": {}, "versionId": self.version_id(),
                 "meta": {"templateCredsSetupCompleted": True}, "tags": [],
                 "staticData": None}
@@ -301,6 +301,9 @@ def workflow_b() -> WF:
     w.add(http("B", "Notify Slack", "POST", "/cases/{{ %s }}/actions/post_slack_message" % CASE, corr=C, retries=4, wait_ms=3000), 1980, 0)
     w.add(report("B", "Incident Routed", "succeeded", C, f"entity_type: 'case', entity_id: {CASE},",
                  detail="{ jira: $('Create Jira Task').first().json.jira, owner: $('Assign Owner').first().json.assignee }"), 2200, 0)
+    # A repeat alert for an incident that is already open is linked to it; report a terminal step so the run closes.
+    w.add(report("B", "Duplicate Linked", "succeeded", C, f"entity_type: 'case', entity_id: {CASE},",
+                 detail="{ reason: 'open incident for the same service already exists' }"), 1320, 200)
     w.add(schedule("SLA Monitor (10 min)", 10), 0, 420)
     w.add(http("B", "Monitor SLA", "POST", "/ops/sla/scan"), 220, 420)
     w.add(if_true("Breaches?", "={{ $json.count > 0 }}"), 440, 420)
@@ -315,6 +318,7 @@ def workflow_b() -> WF:
     w.link("Signature Valid?", "Reject", 1)
     w.chain("Respond Accepted", "Categorize", "New Incident?")
     w.link("New Incident?", "Retrieve Context", 0)
+    w.link("New Incident?", "Duplicate Linked", 1)
     w.chain("Retrieve Context", "Assign Owner", "Create Jira Task", "Notify Slack", "Incident Routed")
     w.chain("SLA Monitor (10 min)", "Monitor SLA", "Breaches?")
     w.link("Breaches?", "Each Breach", 0)
