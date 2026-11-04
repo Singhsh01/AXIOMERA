@@ -101,6 +101,12 @@ What migration `0003` does to the demo accounts:
 | Docker Compose project, Postgres user and database for **existing** installs | Docker names volumes after the project (`orkestr_pgdata`, `orkestr_n8ndata`, `orkestr_storage`). Fresh installs use `axiomera`. Existing ones pin the old names in `.env` (below) so they keep their data. A volume can't be renamed in place. |
 | Compatibility code, tests and upgrade notes | `naming.py`, the fallbacks listed above, `tests/test_naming_compat.py`, migration `0003`, the legacy n8n env lines in Compose, and the notes in `.env.example`, the README and the design system. |
 
+## Defects found while verifying
+
+- **Compose ignored legacy settings for n8n.** Compose fills `${AXIOMERA_SERVICE_TOKEN:-…}` from `.env` by name. With an un-migrated `.env`, n8n received the development token and secret, while the API correctly used the real `ORKESTR_*` values. Every n8n→API call would then have failed its token and signature checks. `OTEL_ENDPOINT` and `DB_POOL_SIZE` had the same gap. Fixed with nested fallbacks (`${AXIOMERA_X:-${ORKESTR_X:-default}}`). Checked with `docker compose config` against a legacy-only `.env`, a mixed one, and none.
+- **Stale sample metadata.** The DOCX and PDF samples still carried `orkestr` in their document keywords, which a text search doesn't show. Both were re-exported through the API.
+- **The QA harness needs the database URL.** AUTH-03 writes to the database directly and used to depend on the old default URL. The requirement is now documented at the top of `qa/e2e.py`.
+
 ## Upgrading an installation created before the rename
 
 1. **Keep your data.** Add these lines to `.env`, or the stack starts with new, empty volumes:

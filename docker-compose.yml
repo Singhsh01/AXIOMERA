@@ -23,13 +23,13 @@ x-n8n-env: &n8n-env
   EXECUTIONS_DATA_PRUNE: "true"
   EXECUTIONS_DATA_MAX_AGE: "336"
   AXIOMERA_API_URL: http://api:8000
-  AXIOMERA_SERVICE_TOKEN: ${AXIOMERA_SERVICE_TOKEN:-dev-service-token}
-  AXIOMERA_WEBHOOK_SECRET: ${AXIOMERA_WEBHOOK_SECRET:-dev-webhook-secret}
+  AXIOMERA_SERVICE_TOKEN: ${AXIOMERA_SERVICE_TOKEN:-${ORKESTR_SERVICE_TOKEN:-dev-service-token}}
+  AXIOMERA_WEBHOOK_SECRET: ${AXIOMERA_WEBHOOK_SECRET:-${ORKESTR_WEBHOOK_SECRET:-dev-webhook-secret}}
   # Legacy names for n8n executions that started under workflow versions from before the rename
   # (they resume with the code they started with). Safe to remove once no such execution is waiting.
   ORKESTR_API_URL: http://api:8000
-  ORKESTR_SERVICE_TOKEN: ${AXIOMERA_SERVICE_TOKEN:-dev-service-token}
-  ORKESTR_WEBHOOK_SECRET: ${AXIOMERA_WEBHOOK_SECRET:-dev-webhook-secret}
+  ORKESTR_SERVICE_TOKEN: ${AXIOMERA_SERVICE_TOKEN:-${ORKESTR_SERVICE_TOKEN:-dev-service-token}}
+  ORKESTR_WEBHOOK_SECRET: ${AXIOMERA_WEBHOOK_SECRET:-${ORKESTR_WEBHOOK_SECRET:-dev-webhook-secret}}
 
 services:
   postgres:
@@ -56,10 +56,10 @@ services:
       AXIOMERA_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-axiomera}:${POSTGRES_PASSWORD:-axiomera}@postgres:5432/${POSTGRES_DB:-axiomera}
       AXIOMERA_N8N_BASE_URL: http://n8n:5678
       AXIOMERA_CORS_ORIGINS: '["http://localhost:3000"]'
-      AXIOMERA_OTEL_ENDPOINT: ${AXIOMERA_OTEL_ENDPOINT:-}
+      AXIOMERA_OTEL_ENDPOINT: ${AXIOMERA_OTEL_ENDPOINT:-${ORKESTR_OTEL_ENDPOINT:-}}
       AXIOMERA_REDIS_URL: redis://redis:6379/0        # shared cache + rate limits across workers
       WEB_CONCURRENCY: ${WEB_CONCURRENCY:-2}          # API worker processes (raise on bigger machines)
-      AXIOMERA_DB_POOL_SIZE: ${AXIOMERA_DB_POOL_SIZE:-10}
+      AXIOMERA_DB_POOL_SIZE: ${AXIOMERA_DB_POOL_SIZE:-${ORKESTR_DB_POOL_SIZE:-10}}
     volumes:
       - ./n8n/workflows:/workflows:ro
       - storage:/data/storage
