@@ -3,10 +3,13 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { Logo } from "@/components/Logo";
-import { ThemeToggle, useTheme } from "@/components/theme";
+import { Constellation } from "@/components/landing/Constellation";
+import { ThemeToggle } from "@/components/theme";
 import { BRAND } from "@/lib/brand";
 import { Button, ErrorNote, Field, inputCls } from "@/components/ui/primitives";
 import { post } from "@/lib/api";
+
+const LOGIN_HUBS = [{ label: "Operator", x: 0.25, y: 0.22 }, { label: "Approver", x: 0.7, y: 0.3 }, { label: "Reviewer", x: 0.45, y: 0.5 }, { label: "Admin", x: 0.8, y: 0.55 }];
 
 const DEMO = [
   ["ops@orkestr.dev", "Olivia", "Operator", "Runs cases and tenders"],
@@ -22,7 +25,6 @@ function LoginForm() {
   const [password, setPassword] = useState("orkestr-demo");
   const [error, setError] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
-  const theme = useTheme();
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,13 +41,12 @@ function LoginForm() {
 
   return (
     <div className="grid min-h-screen bg-page lg:grid-cols-[1.1fr_1fr]">
-      <aside className="relative hidden overflow-hidden lg:block">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={theme === "dark" ? "/media/portal-night.webp" : "/media/portal.webp"} alt="" className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/10 to-transparent dark:from-black/70" />
-        <div className="absolute inset-x-0 bottom-0 p-12 text-page [color:rgb(244_240_232)]">
-          <p className="font-mono text-[11px] uppercase tracking-label opacity-80">{BRAND.name} · Governed automation</p>
-          <p className="mt-4 max-w-md font-serif text-[40px] italic leading-[1.05]">Every consequential action passes through a person.</p>
+      <aside className="tone-invert relative hidden overflow-hidden lg:block">
+        <div className="gridlines absolute inset-0 opacity-70" aria-hidden />
+        <Constellation hubs={LOGIN_HUBS} className="absolute inset-0 h-full w-full" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-page via-page/80 to-transparent p-12 pt-32">
+          <p className="font-mono text-[11px] uppercase tracking-label text-ink-mute">{BRAND.name} · {BRAND.descriptor}</p>
+          <p className="mt-4 max-w-md font-serif text-[40px] italic leading-[1.05] text-ink">Every consequential action passes through a person.</p>
         </div>
       </aside>
       <main className="flex flex-col px-6 py-10 sm:px-12 lg:px-16">

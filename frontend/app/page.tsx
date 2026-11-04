@@ -1,22 +1,20 @@
 import Link from "next/link";
 import { ArchitectureDiagram } from "@/components/landing/ArchitectureDiagram";
+import { Constellation } from "@/components/landing/Constellation";
+import { AgentNetwork, GovernanceGate, OpsConsole, TenderReader } from "@/components/landing/Demos";
 import { EvalResults } from "@/components/landing/EvalResults";
 import { HeroTrace } from "@/components/landing/HeroTrace";
-import { ParallaxImage, Rail, Reveal, RiseLines, SiteHeader, ThemedImage } from "@/components/landing/Motion";
+import { Rail, Reveal, RiseLines, SceneController, SiteHeader, ThemedImage } from "@/components/landing/Motion";
 import { Mark, Wordmark } from "@/components/Logo";
 import { BRAND } from "@/lib/brand";
 
-const AGENTS = [
-  ["Triage", "Summarises and extracts; category and priority are decided by rules"],
-  ["Research", "Pulls the customer, their orders and the policy passages that apply"],
-  ["Resolution", "LangGraph loop: plan, draft, validate against what is approved"],
-  ["Communication", "Writes the reply and is checked for promises it cannot keep"],
-  ["Execution", "Runs approved actions only, and only if parameters still match"],
-  ["Verification", "Reads the record back and compares it with what was intended"],
-  ["Requirements", "Extracts tender obligations with page and character offsets"],
-  ["Compliance", "Rates each requirement against approved, unexpired evidence"],
-  ["Proposal", "Drafts grounded sections where every sentence carries a citation"],
+/** The systems and agents the platform coordinates, as named stars in the hero constellation. */
+const HUBS = [
+  { label: "n8n", x: 0.62, y: 0.24 }, { label: "Triage agent", x: 0.78, y: 0.36 }, { label: "Approval", x: 0.7, y: 0.62 },
+  { label: "Jira", x: 0.9, y: 0.2 }, { label: "Payments ledger", x: 0.88, y: 0.72 }, { label: "RFP · p.1", x: 0.62, y: 0.84 },
+  { label: "Evidence", x: 0.94, y: 0.48 }, { label: "Audit chain", x: 0.66, y: 0.42 }, { label: "Slack", x: 0.8, y: 0.88 },
 ];
+const CLOSING_HUBS = [{ label: "Case #1001", x: 0.72, y: 0.35 }, { label: "Approver", x: 0.84, y: 0.62 }, { label: "Proposal v2", x: 0.6, y: 0.7 }];
 
 const GUARANTEES = [
   ["Approvals bound to scope", "Each approval stores a hash of the exact parameters. Change the amount afterwards and execution is refused."],
@@ -33,21 +31,23 @@ const CONNECTORS = [
   ["Payments ledger", "Refunds and credits", "Simulator only, by design"],
 ];
 
-function Chapter({ n, kicker, title, children, id }: { n: string; kicker: string; title: React.ReactNode; children?: React.ReactNode; id?: string }) {
+function Kicker({ n, children }: { n: string; children: React.ReactNode }) {
+  return <p className="flex items-center gap-4 font-mono text-[11px] uppercase tracking-label text-ink-mute"><span className="text-ink">{n}</span><span className="h-px w-10 bg-ink/30" />{children}</p>;
+}
+
+function Chapter({ n, kicker, title, children }: { n: string; kicker: string; title: React.ReactNode; children?: React.ReactNode }) {
   return (
     <Reveal className="max-w-xl">
-      <p id={id} className="flex scroll-mt-28 items-center gap-4 font-mono text-[11px] uppercase tracking-label text-ink-mute">
-        <span className="text-ink">{n}</span><span className="h-px w-10 bg-ink/30" />{kicker}
-      </p>
+      <Kicker n={n}>{kicker}</Kicker>
       <h2 className="h-display mt-6 text-[40px] sm:text-[56px]">{title}</h2>
       {children && <div className="mt-6 space-y-4 text-[16px] leading-relaxed text-ink-soft">{children}</div>}
     </Reveal>
   );
 }
 
-function Shot({ name, alt, className }: { name: string; alt: string; className?: string }) {
+function Shot({ name, alt }: { name: string; alt: string }) {
   return (
-    <figure className={`border border-line bg-surface p-2 shadow-lift ${className ?? ""}`}>
+    <figure className="border border-line bg-surface p-2 shadow-lift">
       <ThemedImage light={`/screens/${name}-light.webp`} dark={`/screens/${name}-dark.webp`} alt={alt} imgClassName="w-full" />
     </figure>
   );
@@ -56,41 +56,43 @@ function Shot({ name, alt, className }: { name: string; alt: string; className?:
 export default function Landing() {
   return (
     <div className="bg-page xl:pl-14">
+      <SceneController />
       <Rail />
       <SiteHeader />
 
-      {/* ------------------------------------------------------------- hero */}
-      <section className="relative flex min-h-[100svh] flex-col overflow-hidden">
-        <ParallaxImage light="/media/hero-massing.webp" dark="/media/dusk.webp" alt="" />
-        <div className="absolute inset-0 bg-page/80 md:bg-transparent md:bg-gradient-to-r md:from-page md:via-page/60 md:to-page/0" aria-hidden />
-        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-page to-transparent" aria-hidden />
-        <div className="relative mx-auto flex w-full max-w-[1400px] flex-1 flex-col justify-center px-5 pb-10 pt-28 sm:px-10">
-          <p className="font-mono text-[11px] uppercase tracking-label text-ink-soft">{BRAND.descriptor}</p>
-          <h1 className="h-display mt-7 max-w-[15ch] text-[52px] sm:text-[80px] lg:text-[96px]">
-            <RiseLines lines={["Automation,", "built on", <span key="a" className="font-serif text-[1.08em] font-normal italic tracking-[-0.02em] text-accent">axioms.</span>]} />
+      {/* ------------------------------------------------------------- hero: the descriptor, over a live constellation */}
+      <section data-tone="base" className="relative flex min-h-[100svh] flex-col overflow-hidden">
+        <div className="gridlines absolute inset-0 opacity-60" aria-hidden />
+        <Constellation hubs={HUBS} className="absolute inset-0 h-full w-full" fadeLeft />
+        <div className="absolute inset-0 bg-page/75 lg:hidden" aria-hidden />
+        <div className="pointer-events-none relative mx-auto flex w-full max-w-[1400px] flex-1 flex-col justify-center px-5 pb-10 pt-28 sm:px-10">
+          <p className="font-mono text-[11px] uppercase tracking-label text-ink-soft">{BRAND.name} — automation built on axioms</p>
+          <h1 className="h-display mt-7 text-[44px] sm:text-[72px] lg:text-[88px]">
+            <RiseLines lines={["Autonomous", "Enterprise Operations", <span key="p" className="font-serif text-[1.06em] font-normal italic tracking-[-0.02em] text-accent">&amp; Proposal Intelligence</span>]} />
           </h1>
-          <Reveal delay={0.55} className="mt-8 max-w-[34rem]">
-            <p className="text-[17px] leading-relaxed text-ink-soft">
-              {BRAND.name} runs customer cases and tender responses through n8n workflows and AI agents, cites the evidence behind every
-              recommendation, and waits for an authorised person before anything consequential leaves the building.
+          <Reveal delay={0.6} className="pointer-events-auto mt-8 max-w-[36rem]">
+            <p className="font-mono text-[11px] uppercase tracking-label text-ink">Platform</p>
+            <p className="mt-3 text-[17px] leading-relaxed text-ink-soft">
+              Customer cases and tender responses run through n8n workflows and AI agents. Every recommendation cites its evidence, and nothing consequential
+              happens until an authorised person approves it.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-6">
               <Link href="/login" className="focus-ring inline-flex h-12 items-center gap-3 bg-primary px-7 font-mono text-[11px] uppercase tracking-label text-primary-fg transition-colors hover:bg-primary/85">
                 Open the command center <span aria-hidden>→</span>
               </Link>
-              <a href="#lifecycle" className="focus-ring group inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-label text-ink">
-                <span className="border-b border-ink/40 pb-1 group-hover:border-ink">Follow a request</span>
+              <a href="#journey" className="focus-ring group inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-label text-ink">
+                <span className="border-b border-ink/40 pb-1 group-hover:border-ink">▶ Watch the demo journey</span>
               </a>
             </div>
           </Reveal>
         </div>
         <div className="relative mx-auto flex w-full max-w-[1400px] items-end justify-between gap-6 px-5 pb-8 sm:px-10">
-          <a href="#platform" className="focus-ring flex items-center gap-4 font-mono text-[10px] uppercase tracking-[0.3em] text-ink-mute">
+          <a href="#engines" className="focus-ring flex items-center gap-4 font-mono text-[10px] uppercase tracking-[0.3em] text-ink-mute">
             <span className="relative block h-14 w-px overflow-hidden bg-line"><span className="scroll-cue absolute inset-0 bg-ink" /></span>Scroll
           </a>
           <dl className="hidden gap-10 md:flex">
             {[["49 / 49", "consequential actions gated by approval"], ["100 %", "injection recall on the labelled set"], ["A–E", "n8n workflows, version-controlled"]].map(([v, l]) => (
-              <div key={l} className="max-w-[12rem] border-l border-ink/25 pl-4">
+              <div key={l} className="max-w-[12rem] border-l border-ink/25 bg-page/60 pl-4 backdrop-blur-[2px]">
                 <dt className="font-display text-[26px] font-bold tabular tracking-[-0.03em]">{v}</dt>
                 <dd className="mt-1 text-[12px] leading-snug text-ink-mute">{l}</dd>
               </div>
@@ -100,8 +102,32 @@ export default function Landing() {
       </section>
 
       <main className="relative">
-        {/* ------------------------------------------------------- 01 operations: split screen, layered */}
-        <section id="platform" className="mx-auto grid max-w-[1400px] scroll-mt-20 gap-16 px-5 py-28 sm:px-10 lg:grid-cols-[0.85fr_1.15fr] lg:py-40">
+        {/* ------------------------------------------------------- two engines, one control plane */}
+        <section id="engines" data-tone="base" className="mx-auto max-w-[1400px] scroll-mt-20 px-5 py-24 sm:px-10 lg:py-32">
+          <Reveal className="flex flex-wrap items-end justify-between gap-6 border-b border-ink pb-6">
+            <h2 className="h-display text-[32px] sm:text-[44px]">Two engines. One control plane.</h2>
+            <p className="max-w-md text-[14.5px] text-ink-mute">Both run on the same approval engine, audit chain, agent runtime and n8n orchestration.</p>
+          </Reveal>
+          <div className="mt-12 grid gap-14 lg:grid-cols-2">
+            <Reveal className="min-w-0">
+              <p className="font-mono text-[11px] uppercase tracking-label text-accent">Engine I</p>
+              <h3 className="mt-3 font-display text-[28px] font-bold tracking-[-0.025em]">Autonomous Enterprise Operations</h3>
+              <p className="mt-3 max-w-lg text-[15px] leading-relaxed text-ink-soft">Refund requests, incidents and account changes: triaged, researched and resolved by agents; executed only after approval; verified by reading the record back.</p>
+              <div className="mt-7"><OpsConsole /></div>
+              <a href="#platform" className="mt-5 inline-block font-mono text-[11px] uppercase tracking-label text-ink-soft hover:text-ink">How operations work →</a>
+            </Reveal>
+            <Reveal delay={0.12} className="min-w-0">
+              <p className="font-mono text-[11px] uppercase tracking-label text-accent">Engine II</p>
+              <h3 className="mt-3 font-display text-[28px] font-bold tracking-[-0.025em]">Proposal Intelligence</h3>
+              <p className="mt-3 max-w-lg text-[15px] leading-relaxed text-ink-soft">Tenders read line by line: every obligation extracted with its page, rated against approved evidence, drafted into a cited proposal. Hidden instructions are flagged, not obeyed.</p>
+              <div className="mt-7"><TenderReader /></div>
+              <a href="#proposals" className="mt-5 inline-block font-mono text-[11px] uppercase tracking-label text-ink-soft hover:text-ink">How proposals work →</a>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* ------------------------------------------------------- 01 operations */}
+        <section id="platform" data-tone="base" className="mx-auto grid max-w-[1400px] scroll-mt-20 gap-16 px-5 py-24 sm:px-10 lg:grid-cols-[0.8fr_1.2fr] lg:py-36">
           <div className="lg:sticky lg:top-32 lg:h-fit">
             <Chapter n="01" kicker="Enterprise operations" title="One command center for every case.">
               <p>Signed e-mail, portal and monitoring events become cases. Agents triage them, gather evidence and propose a resolution; refunds, credits, replies and account changes wait for an authorised approver.</p>
@@ -115,37 +141,25 @@ export default function Landing() {
               </dl>
             </Reveal>
           </div>
-          <div className="relative">
-            <Reveal className="absolute -right-5 -top-10 hidden w-[55%] sm:block lg:-right-10">
-              <ThemedImage light="/media/facade-detail.webp" dark="/media/facade-detail-night.webp" alt="" imgClassName="aspect-[4/5] w-full object-cover" />
-            </Reveal>
-            <Reveal delay={0.15} className="relative pt-24 sm:pr-16">
-              <Shot name="command-center" alt={`${BRAND.name} command center: open cases, SLA status, decisions awaiting approval and live n8n runs`} />
-            </Reveal>
-          </div>
+          <Reveal delay={0.15}><Shot name="command-center" alt={`${BRAND.name} command center: open cases, SLA status, decisions awaiting approval and live n8n runs`} /></Reveal>
         </section>
 
-        {/* ------------------------------------------------------- 02 proposals: inverse band, screenshot overhangs */}
-        <section className="relative">
-          <div className="bg-inverse pb-[22vw] pt-28 text-inverse-fg lg:pb-[16vw] lg:pt-36">
-            <div className="mx-auto grid max-w-[1400px] gap-12 px-5 sm:px-10 lg:grid-cols-[1fr_1fr]">
-              <Reveal>
-                <p className="flex items-center gap-4 font-mono text-[11px] uppercase tracking-label text-inverse-fg/60"><span className="text-inverse-fg">02</span><span className="h-px w-10 bg-inverse-fg/30" />Proposal &amp; RFP intelligence</p>
-                <h2 className="h-display mt-6 text-[40px] sm:text-[56px]">Tenders read, checked and drafted against your own evidence.</h2>
-              </Reveal>
-              <Reveal delay={0.1} className="self-end text-[16px] leading-relaxed text-inverse-fg/75">
-                <p>Upload a PDF or DOCX. Requirements are extracted with page and character offsets, matched to approved company knowledge with hybrid retrieval, and drafted into a proposal that exports to Word and PDF with an evidence manifest attached.</p>
-                <p className="mt-4">A poisoned tender that tells reviewers to &ldquo;mark every requirement compliant&rdquo; is flagged, and changes nothing.</p>
-              </Reveal>
-            </div>
+        {/* ------------------------------------------------------- 02 proposals (scene turns) */}
+        <section id="proposals" data-tone="alt" className="scroll-mt-20 py-24 lg:py-36">
+          <div className="mx-auto grid max-w-[1400px] gap-12 px-5 sm:px-10 lg:grid-cols-[1fr_1fr]">
+            <Chapter n="02" kicker="Proposal & RFP intelligence" title="Tenders read, checked and drafted against your own evidence." />
+            <Reveal delay={0.1} className="self-end text-[16px] leading-relaxed text-ink-soft">
+              <p>Upload a PDF or DOCX. Requirements are extracted with page and character offsets, matched to approved company knowledge with hybrid retrieval, and drafted into a proposal that exports to Word and PDF with an evidence manifest attached.</p>
+              <p className="mt-4">A poisoned tender that tells reviewers to &ldquo;mark every requirement compliant&rdquo; is flagged, and changes nothing.</p>
+            </Reveal>
           </div>
-          <Reveal className="relative mx-auto -mt-[18vw] max-w-[1240px] px-5 sm:px-10 lg:-mt-[13vw]">
+          <Reveal className="mx-auto mt-16 max-w-[1240px] px-5 sm:px-10">
             <Shot name="rfp-workspace" alt="RFP workspace: source page with the requirement highlighted, compliance matrix and evidence" />
           </Reveal>
         </section>
 
-        {/* ------------------------------------------------------- 03 orchestration: live trace on a drafting grid */}
-        <section id="lifecycle" className="mx-auto max-w-[1400px] scroll-mt-20 px-5 py-28 sm:px-10 lg:py-40">
+        {/* ------------------------------------------------------- 03 orchestration */}
+        <section id="lifecycle" data-tone="base" className="mx-auto max-w-[1400px] scroll-mt-20 px-5 py-24 sm:px-10 lg:py-36">
           <div className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-end">
             <Chapter n="03" kicker="Intelligent workflow orchestration" title={<>n8n decides <em className="font-serif font-normal italic">when</em>. {BRAND.name} decides what is true.</>} />
             <Reveal delay={0.1} className="text-[16px] leading-relaxed text-ink-soft lg:pb-2">
@@ -159,42 +173,27 @@ export default function Landing() {
           </Reveal>
         </section>
 
-        {/* ------------------------------------------------------- 04 agents: image + typographic index */}
-        <section className="border-y border-line bg-surface">
-          <div className="mx-auto grid max-w-[1400px] lg:grid-cols-[1.1fr_1fr]">
-            <div className="relative min-h-[360px] overflow-hidden lg:min-h-0">
-              <ThemedImage light="/media/field.webp" dark="/media/field-night.webp" alt="" className="absolute inset-0" imgClassName="h-full w-full object-cover" />
-              <div className="absolute bottom-0 left-0 bg-page p-7 sm:p-10 lg:max-w-[70%]">
-                <Chapter n="04" kicker="AI agent collaboration" title="Nine specialists. Scoped tools. Budgets." />
-              </div>
-            </div>
-            <ol className="px-5 py-14 sm:px-12 lg:py-24">
-              {AGENTS.map(([a, d], i) => (
-                <Reveal as="li" key={a} delay={i * 0.04} className="group grid grid-cols-[2.5rem_1fr] gap-4 border-b border-line py-4 last:border-0">
-                  <span className="pt-1 font-mono text-[11px] text-ink-faint">{String(i + 1).padStart(2, "0")}</span>
-                  <span>
-                    <span className="font-display text-[19px] font-bold tracking-[-0.015em] transition-colors group-hover:text-accent">{a}</span>
-                    <span className="mt-1 block text-[13.5px] leading-snug text-ink-mute">{d}</span>
-                  </span>
-                </Reveal>
-              ))}
-            </ol>
+        {/* ------------------------------------------------------- 04 agents (scene turns): live collaboration constellation */}
+        <section data-tone="alt" className="relative overflow-hidden py-24 lg:py-36">
+          <Constellation className="absolute inset-0 h-full w-full opacity-60" density={0.6} pulses={false} />
+          <div className="relative mx-auto grid max-w-[1400px] items-center gap-12 px-5 sm:px-10 lg:grid-cols-[0.8fr_1.2fr]">
+            <Chapter n="04" kicker="AI agent collaboration" title="Nine specialists. One human in the loop.">
+              <p>Each agent has scoped tools, a budget and a prompt version on record. They hand work to each other in a fixed order, and the human approver sits at the centre: nothing crosses from proposal to execution without them.</p>
+            </Chapter>
+            <Reveal delay={0.1}><AgentNetwork /></Reveal>
           </div>
         </section>
 
-        {/* ------------------------------------------------------- 05 governance: full-bleed portal, offset card, numbered grid */}
-        <section id="governance" className="scroll-mt-20 py-28 lg:py-40">
-          <div className="relative mx-auto max-w-[1400px] px-5 sm:px-10">
-            <div className="relative h-[52vw] max-h-[620px] min-h-[320px] overflow-hidden">
-              <ThemedImage light="/media/portal.webp" dark="/media/portal-night.webp" alt="A long colonnade under a single lintel, a bronze line running down its axis" className="h-full" imgClassName="h-full w-full object-cover" />
-            </div>
-            <Reveal className="relative -mt-24 ml-auto max-w-xl border border-line bg-page p-8 sm:-mt-32 sm:p-12 lg:mr-12">
-              <p className="flex items-center gap-4 font-mono text-[11px] uppercase tracking-label text-ink-mute"><span className="text-ink">05</span><span className="h-px w-10 bg-ink/30" />Human-governed automation</p>
-              <h2 className="h-display mt-6 text-[36px] sm:text-[48px]">Every consequential action passes through a person.</h2>
-              <p className="mt-5 text-[15.5px] leading-relaxed text-ink-soft">Guardrails are enforced in code, not in prompts. Policy decides who must sign off; n8n waits on a real Wait node until a person with the right role decides.</p>
+        {/* ------------------------------------------------------- 05 governance: the approval gate in motion */}
+        <section id="governance" data-tone="base" className="mx-auto max-w-[1400px] scroll-mt-20 px-5 py-24 sm:px-10 lg:py-36">
+          <div className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-end">
+            <Chapter n="05" kicker="Human-governed automation" title="Every consequential action passes through a person." />
+            <Reveal delay={0.1} className="text-[16px] leading-relaxed text-ink-soft lg:pb-2">
+              <p>Guardrails are enforced in code, not in prompts. Manipulated input is held at the scan; policy decides who must sign off; n8n waits on a real Wait node until that person decides; only approved actions whose parameters still match are executed and read back.</p>
             </Reveal>
           </div>
-          <dl className="mx-auto mt-20 grid max-w-[1400px] gap-x-12 gap-y-12 px-5 sm:grid-cols-2 sm:px-10 lg:grid-cols-3">
+          <Reveal delay={0.1} className="mt-14 border-y border-line"><GovernanceGate /></Reveal>
+          <dl className="mt-16 grid gap-x-12 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
             {GUARANTEES.map(([t, d], i) => (
               <Reveal key={t} delay={(i % 3) * 0.08}>
                 <dt className="flex items-baseline gap-4 border-t-[3px] border-ink pt-5">
@@ -207,9 +206,9 @@ export default function Landing() {
           </dl>
         </section>
 
-        {/* ------------------------------------------------------- 06 integrations: ruled schedule + architecture */}
-        <section className="border-t border-line bg-surface">
-          <div className="mx-auto max-w-[1400px] px-5 py-28 sm:px-10 lg:py-40">
+        {/* ------------------------------------------------------- 06 integrations (scene turns) */}
+        <section data-tone="alt" className="border-t border-line">
+          <div className="mx-auto max-w-[1400px] px-5 py-24 sm:px-10 lg:py-36">
             <div className="grid gap-16 lg:grid-cols-[0.8fr_1.2fr]">
               <Chapter n="06" kicker="Enterprise integrations" title="Connected, and honest about it.">
                 <p>Every connector reports its effective mode. Without credentials, records come from clearly labelled simulators; payments never leave the simulator in this project.</p>
@@ -233,8 +232,8 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* ------------------------------------------------------- 07 observability: screenshot + measured results */}
-        <section id="evidence" className="mx-auto max-w-[1400px] scroll-mt-20 px-5 py-28 sm:px-10 lg:py-40">
+        {/* ------------------------------------------------------- 07 observability */}
+        <section id="evidence" data-tone="base" className="mx-auto max-w-[1400px] scroll-mt-20 px-5 py-24 sm:px-10 lg:py-36">
           <div className="grid gap-16 lg:grid-cols-[1.25fr_0.75fr] lg:items-center">
             <Reveal><Shot name="observability" alt="Observability: workflow success rate, case resolution time, approval turnaround and AI cost" /></Reveal>
             <Chapter n="07" kicker="Observability & analytics" title="Measured, not asserted.">
@@ -245,12 +244,28 @@ export default function Landing() {
           <div className="mt-20"><EvalResults /></div>
         </section>
 
+        {/* ------------------------------------------------------- demo journey video (scene turns) */}
+        <section id="journey" data-tone="alt" className="scroll-mt-20 border-t border-line py-24 lg:py-36">
+          <div className="mx-auto max-w-[1400px] px-5 sm:px-10">
+            <div className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-end">
+              <Chapter n="08" kicker="The demo journey" title="From an ordinary refund to an attack, an outage and a poisoned tender." />
+              <Reveal delay={0.1} className="text-[16px] leading-relaxed text-ink-soft lg:pb-2">
+                <p>Recorded from real runs of this stack: the everyday path, then the extremes it is built for. A manipulation attempt, a flaky integration that n8n retries and finally dead-letters, a tender with hidden instructions, a self-approval attempt, a brute-force lockout and a thousand concurrent users.</p>
+              </Reveal>
+            </div>
+            <Reveal delay={0.1} className="mt-14 border border-line bg-surface p-2 shadow-lift">
+              <video className="w-full" controls preload="none" poster="/media/journey-poster.jpg" playsInline>
+                <source src="/media/journey.mp4" type="video/mp4" />
+              </video>
+            </Reveal>
+          </div>
+        </section>
+
         {/* ------------------------------------------------------- closing */}
-        <section className="relative overflow-hidden">
-          <ThemedImage light="/media/facade-detail.webp" dark="/media/hero-massing-night.webp" alt="" className="absolute inset-0" imgClassName="h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-page/75" aria-hidden />
-          <div className="relative mx-auto max-w-[1400px] px-5 py-32 sm:px-10 lg:py-44">
-            <Reveal>
+        <section data-tone="alt" className="relative overflow-hidden">
+          <Constellation hubs={CLOSING_HUBS} className="absolute inset-0 h-full w-full" fadeLeft density={0.8} />
+          <div className="pointer-events-none relative mx-auto max-w-[1400px] px-5 py-32 sm:px-10 lg:py-44">
+            <Reveal className="pointer-events-auto">
               <p className="font-serif text-[48px] italic leading-[1.02] sm:text-[80px]">Every decision,<br />on the record.</p>
               <div className="mt-12 flex flex-wrap items-center gap-6">
                 <Link href="/login" className="focus-ring inline-flex h-12 items-center gap-3 bg-primary px-7 font-mono text-[11px] uppercase tracking-label text-primary-fg hover:bg-primary/85">Open the demo workspace <span aria-hidden>→</span></Link>
@@ -261,7 +276,7 @@ export default function Landing() {
         </section>
       </main>
 
-      <footer className="border-t border-line">
+      <footer data-tone="alt" className="border-t border-line">
         <div className="mx-auto grid max-w-[1400px] gap-10 px-5 py-14 sm:px-10 md:grid-cols-[1.5fr_1fr_1fr]">
           <div>
             <span className="inline-flex items-center gap-3 text-ink"><Mark className="h-9 w-9" /><Wordmark className="text-[17px]" /></span>
@@ -269,7 +284,7 @@ export default function Landing() {
           </div>
           <nav aria-label="Platform" className="space-y-2 text-[13.5px]">
             <p className="label mb-3">Platform</p>
-            {[["Enterprise operations", "#platform"], ["Request lifecycle", "#lifecycle"], ["Governance", "#governance"], ["Evidence", "#evidence"]].map(([l, h]) => <a key={h} href={h} className="block text-ink-soft hover:text-ink">{l}</a>)}
+            {[["Two engines", "#engines"], ["Request lifecycle", "#lifecycle"], ["Governance", "#governance"], ["Demo journey", "#journey"]].map(([l, h]) => <a key={h} href={h} className="block text-ink-soft hover:text-ink">{l}</a>)}
           </nav>
           <div className="space-y-2 text-[13.5px] text-ink-mute">
             <p className="label mb-3">About this build</p>
