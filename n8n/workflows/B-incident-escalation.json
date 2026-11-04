@@ -8,7 +8,7 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "parameters": {
-        "content": "## Workflow B \u2014 Incident Escalation\nTop: event-driven incident handling. Bottom: SLA monitor every 10 minutes escalates breaches and closes resolved incidents. Jira/Slack calls go through Orkestr connectors (live or clearly-labelled simulators).",
+        "content": "## Workflow B \u2014 Incident Escalation\nTop: event-driven incident handling. Bottom: SLA monitor every 10 minutes escalates breaches and closes resolved incidents. Jira/Slack calls go through Axiomera connectors (live or clearly-labelled simulators).",
         "width": 640,
         "height": 180
       },
@@ -22,10 +22,10 @@
       "name": "Incident Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "webhookId": "98074e10-7e37-5328-9a8b-e374d234ef2d",
+      "webhookId": "880eb902-79eb-50b6-91b0-33340f1e60fc",
       "parameters": {
         "httpMethod": "POST",
-        "path": "orkestr/incident",
+        "path": "axiomera/incident",
         "responseMode": "responseNode",
         "options": {
           "rawBody": true
@@ -43,7 +43,7 @@
       "typeVersion": 2,
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "// Verify the HMAC signature of the incoming webhook (timestamp + '.' + raw body).\nconst crypto = require('crypto');\nconst item = $input.first();\nconst headers = item.json.headers || {};\nconst ts = headers['x-orkestr-timestamp'];\nconst sig = headers['x-orkestr-signature'];\nlet raw;\ntry { raw = await this.helpers.getBinaryDataBuffer(0, 'data'); }\ncatch (e) { raw = Buffer.from(JSON.stringify(item.json.body ?? {})); }\nconst secret = $env.ORKESTR_WEBHOOK_SECRET;\nconst now = Math.floor(Date.now() / 1000);\nlet valid = false; let reason = '';\nif (!ts || !sig) reason = 'missing signature headers';\nelse if (Math.abs(now - parseInt(ts, 10)) > 300) reason = 'timestamp outside tolerance';\nelse {\n  const expected = crypto.createHmac('sha256', secret).update(ts + '.').update(raw).digest('hex');\n  valid = expected.length === sig.length && crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(sig));\n  if (!valid) reason = 'signature mismatch';\n}\nlet body = item.json.body;\nif (!body || typeof body !== 'object' || Object.keys(body).length === 0) { try { body = JSON.parse(raw.toString('utf8')); } catch (e) { body = {}; } }\nreturn [{ json: { valid, reason, status: valid ? 200 : 401, payload: body,\n  correlation_id: body.correlation_id || headers['x-correlation-id'] || String($execution.id),\n  workspace_id: body.workspace_id || '' } }];"
+        "jsCode": "// Verify the HMAC signature of the incoming webhook (timestamp + '.' + raw body).\nconst crypto = require('crypto');\nconst item = $input.first();\nconst headers = item.json.headers || {};\n// X-Axiomera-* headers; the legacy X-Orkestr-* names from before the product rename are still accepted.\nconst ts = headers['x-axiomera-timestamp'] ?? headers['x-orkestr-timestamp'];\nconst sig = headers['x-axiomera-signature'] ?? headers['x-orkestr-signature'];\nlet raw;\ntry { raw = await this.helpers.getBinaryDataBuffer(0, 'data'); }\ncatch (e) { raw = Buffer.from(JSON.stringify(item.json.body ?? {})); }\nconst secret = $env.AXIOMERA_WEBHOOK_SECRET;\nconst now = Math.floor(Date.now() / 1000);\nlet valid = false; let reason = '';\nif (!ts || !sig) reason = 'missing signature headers';\nelse if (Math.abs(now - parseInt(ts, 10)) > 300) reason = 'timestamp outside tolerance';\nelse {\n  const expected = crypto.createHmac('sha256', secret).update(ts + '.').update(raw).digest('hex');\n  valid = expected.length === sig.length && crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(sig));\n  if (!valid) reason = 'signature mismatch';\n}\nlet body = item.json.body;\nif (!body || typeof body !== 'object' || Object.keys(body).length === 0) { try { body = JSON.parse(raw.toString('utf8')); } catch (e) { body = {}; } }\nreturn [{ json: { valid, reason, status: valid ? 200 : 401, payload: body,\n  correlation_id: body.correlation_id || headers['x-correlation-id'] || String($execution.id),\n  workspace_id: body.workspace_id || '' } }];"
       },
       "id": "aa51d33d-fd9e-5a02-8ba6-92ddc26298e4",
       "position": [
@@ -124,24 +124,24 @@
       "typeVersion": 4.2,
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/incidents",
+        "url": "={{ $env.AXIOMERA_API_URL }}/api/v1/incidents",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "X-Orkestr-Service-Token",
-              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+              "name": "X-Axiomera-Service-Token",
+              "value": "={{ $env.AXIOMERA_SERVICE_TOKEN }}"
             },
             {
               "name": "X-N8N-Execution-Id",
               "value": "={{ $execution.id }}"
             },
             {
-              "name": "X-Orkestr-Workflow",
+              "name": "X-Axiomera-Workflow",
               "value": "B"
             },
             {
-              "name": "X-Orkestr-Node",
+              "name": "X-Axiomera-Node",
               "value": "Categorize"
             },
             {
@@ -205,24 +205,24 @@
       "typeVersion": 4.2,
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/cases/{{ $('Categorize').first().json.case_id }}/research",
+        "url": "={{ $env.AXIOMERA_API_URL }}/api/v1/cases/{{ $('Categorize').first().json.case_id }}/research",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "X-Orkestr-Service-Token",
-              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+              "name": "X-Axiomera-Service-Token",
+              "value": "={{ $env.AXIOMERA_SERVICE_TOKEN }}"
             },
             {
               "name": "X-N8N-Execution-Id",
               "value": "={{ $execution.id }}"
             },
             {
-              "name": "X-Orkestr-Workflow",
+              "name": "X-Axiomera-Workflow",
               "value": "B"
             },
             {
-              "name": "X-Orkestr-Node",
+              "name": "X-Axiomera-Node",
               "value": "Retrieve Context"
             },
             {
@@ -250,24 +250,24 @@
       "typeVersion": 4.2,
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/cases/{{ $('Categorize').first().json.case_id }}/assign",
+        "url": "={{ $env.AXIOMERA_API_URL }}/api/v1/cases/{{ $('Categorize').first().json.case_id }}/assign",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "X-Orkestr-Service-Token",
-              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+              "name": "X-Axiomera-Service-Token",
+              "value": "={{ $env.AXIOMERA_SERVICE_TOKEN }}"
             },
             {
               "name": "X-N8N-Execution-Id",
               "value": "={{ $execution.id }}"
             },
             {
-              "name": "X-Orkestr-Workflow",
+              "name": "X-Axiomera-Workflow",
               "value": "B"
             },
             {
-              "name": "X-Orkestr-Node",
+              "name": "X-Axiomera-Node",
               "value": "Assign Owner"
             },
             {
@@ -295,24 +295,24 @@
       "typeVersion": 4.2,
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/cases/{{ $('Categorize').first().json.case_id }}/actions/create_jira_issue",
+        "url": "={{ $env.AXIOMERA_API_URL }}/api/v1/cases/{{ $('Categorize').first().json.case_id }}/actions/create_jira_issue",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "X-Orkestr-Service-Token",
-              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+              "name": "X-Axiomera-Service-Token",
+              "value": "={{ $env.AXIOMERA_SERVICE_TOKEN }}"
             },
             {
               "name": "X-N8N-Execution-Id",
               "value": "={{ $execution.id }}"
             },
             {
-              "name": "X-Orkestr-Workflow",
+              "name": "X-Axiomera-Workflow",
               "value": "B"
             },
             {
-              "name": "X-Orkestr-Node",
+              "name": "X-Axiomera-Node",
               "value": "Create Jira Task"
             },
             {
@@ -342,24 +342,24 @@
       "typeVersion": 4.2,
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/cases/{{ $('Categorize').first().json.case_id }}/actions/post_slack_message",
+        "url": "={{ $env.AXIOMERA_API_URL }}/api/v1/cases/{{ $('Categorize').first().json.case_id }}/actions/post_slack_message",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "X-Orkestr-Service-Token",
-              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+              "name": "X-Axiomera-Service-Token",
+              "value": "={{ $env.AXIOMERA_SERVICE_TOKEN }}"
             },
             {
               "name": "X-N8N-Execution-Id",
               "value": "={{ $execution.id }}"
             },
             {
-              "name": "X-Orkestr-Workflow",
+              "name": "X-Axiomera-Workflow",
               "value": "B"
             },
             {
-              "name": "X-Orkestr-Node",
+              "name": "X-Axiomera-Node",
               "value": "Notify Slack"
             },
             {
@@ -387,24 +387,24 @@
       "typeVersion": 4.2,
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/workflow-events",
+        "url": "={{ $env.AXIOMERA_API_URL }}/api/v1/workflow-events",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "X-Orkestr-Service-Token",
-              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+              "name": "X-Axiomera-Service-Token",
+              "value": "={{ $env.AXIOMERA_SERVICE_TOKEN }}"
             },
             {
               "name": "X-N8N-Execution-Id",
               "value": "={{ $execution.id }}"
             },
             {
-              "name": "X-Orkestr-Workflow",
+              "name": "X-Axiomera-Workflow",
               "value": "B"
             },
             {
-              "name": "X-Orkestr-Node",
+              "name": "X-Axiomera-Node",
               "value": "Incident Routed"
             },
             {
@@ -436,24 +436,24 @@
       "typeVersion": 4.2,
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/workflow-events",
+        "url": "={{ $env.AXIOMERA_API_URL }}/api/v1/workflow-events",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "X-Orkestr-Service-Token",
-              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+              "name": "X-Axiomera-Service-Token",
+              "value": "={{ $env.AXIOMERA_SERVICE_TOKEN }}"
             },
             {
               "name": "X-N8N-Execution-Id",
               "value": "={{ $execution.id }}"
             },
             {
-              "name": "X-Orkestr-Workflow",
+              "name": "X-Axiomera-Workflow",
               "value": "B"
             },
             {
-              "name": "X-Orkestr-Node",
+              "name": "X-Axiomera-Node",
               "value": "Duplicate Linked"
             },
             {
@@ -505,24 +505,24 @@
       "typeVersion": 4.2,
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/ops/sla/scan",
+        "url": "={{ $env.AXIOMERA_API_URL }}/api/v1/ops/sla/scan",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "X-Orkestr-Service-Token",
-              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+              "name": "X-Axiomera-Service-Token",
+              "value": "={{ $env.AXIOMERA_SERVICE_TOKEN }}"
             },
             {
               "name": "X-N8N-Execution-Id",
               "value": "={{ $execution.id }}"
             },
             {
-              "name": "X-Orkestr-Workflow",
+              "name": "X-Axiomera-Workflow",
               "value": "B"
             },
             {
-              "name": "X-Orkestr-Node",
+              "name": "X-Axiomera-Node",
               "value": "Monitor SLA"
             }
           ]
@@ -593,24 +593,24 @@
       "typeVersion": 4.2,
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/notifications",
+        "url": "={{ $env.AXIOMERA_API_URL }}/api/v1/notifications",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "X-Orkestr-Service-Token",
-              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+              "name": "X-Axiomera-Service-Token",
+              "value": "={{ $env.AXIOMERA_SERVICE_TOKEN }}"
             },
             {
               "name": "X-N8N-Execution-Id",
               "value": "={{ $execution.id }}"
             },
             {
-              "name": "X-Orkestr-Workflow",
+              "name": "X-Axiomera-Workflow",
               "value": "B"
             },
             {
-              "name": "X-Orkestr-Node",
+              "name": "X-Axiomera-Node",
               "value": "Escalate"
             }
           ]
@@ -637,24 +637,24 @@
       "typeVersion": 4.2,
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/ops/auto-close",
+        "url": "={{ $env.AXIOMERA_API_URL }}/api/v1/ops/auto-close",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "X-Orkestr-Service-Token",
-              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+              "name": "X-Axiomera-Service-Token",
+              "value": "={{ $env.AXIOMERA_SERVICE_TOKEN }}"
             },
             {
               "name": "X-N8N-Execution-Id",
               "value": "={{ $execution.id }}"
             },
             {
-              "name": "X-Orkestr-Workflow",
+              "name": "X-Axiomera-Workflow",
               "value": "B"
             },
             {
-              "name": "X-Orkestr-Node",
+              "name": "X-Axiomera-Node",
               "value": "Close Resolved"
             }
           ]
@@ -679,24 +679,24 @@
       "typeVersion": 4.2,
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/workflow-events",
+        "url": "={{ $env.AXIOMERA_API_URL }}/api/v1/workflow-events",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "X-Orkestr-Service-Token",
-              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+              "name": "X-Axiomera-Service-Token",
+              "value": "={{ $env.AXIOMERA_SERVICE_TOKEN }}"
             },
             {
               "name": "X-N8N-Execution-Id",
               "value": "={{ $execution.id }}"
             },
             {
-              "name": "X-Orkestr-Workflow",
+              "name": "X-Axiomera-Workflow",
               "value": "B"
             },
             {
-              "name": "X-Orkestr-Node",
+              "name": "X-Axiomera-Node",
               "value": "Monitor Complete"
             }
           ]
@@ -928,7 +928,7 @@
     "errorWorkflow": "OrkZ0ErrorHandler"
   },
   "pinData": {},
-  "versionId": "a1dd9b2d-bd48-55a5-b53e-467b4e42a762",
+  "versionId": "e65ee711-2da9-5fd4-b506-54f22c4786d6",
   "meta": {
     "templateCredsSetupCompleted": true
   },

@@ -20,24 +20,24 @@
       "typeVersion": 4.2,
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/workflow-events/error",
+        "url": "={{ $env.AXIOMERA_API_URL }}/api/v1/workflow-events/error",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "X-Orkestr-Service-Token",
-              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+              "name": "X-Axiomera-Service-Token",
+              "value": "={{ $env.AXIOMERA_SERVICE_TOKEN }}"
             },
             {
               "name": "X-N8N-Execution-Id",
               "value": "={{ $execution.id }}"
             },
             {
-              "name": "X-Orkestr-Workflow",
+              "name": "X-Axiomera-Workflow",
               "value": "Z"
             },
             {
-              "name": "X-Orkestr-Node",
+              "name": "X-Axiomera-Node",
               "value": "Report Dead Letter"
             }
           ]
@@ -81,7 +81,7 @@
     "executionTimeout": 900
   },
   "pinData": {},
-  "versionId": "5d8b22ef-696f-59d1-ad47-388812878cec",
+  "versionId": "a264fea1-4160-5327-b98b-450919871540",
   "meta": {
     "templateCredsSetupCompleted": true
   },

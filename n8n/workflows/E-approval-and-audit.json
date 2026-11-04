@@ -8,7 +8,7 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "parameters": {
-        "content": "## Workflow E \u2014 Approval & Audit\nWaits (up to 72h) for a human decision recorded in Orkestr. On resume it re-verifies the decider's identity, role and the scope hash against the database before executing. Every step is written to the hash-chained audit log.",
+        "content": "## Workflow E \u2014 Approval & Audit\nWaits (up to 72h) for a human decision recorded in Axiomera. On resume it re-verifies the decider's identity, role and the scope hash against the database before executing. Every step is written to the hash-chained audit log.",
         "width": 640,
         "height": 180
       },
@@ -35,10 +35,10 @@
       "name": "Approval Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "webhookId": "ed3a3472-593b-576f-b008-6f55e44420ad",
+      "webhookId": "39cbf8d0-0050-5ee0-9bb7-5ce1652cea53",
       "parameters": {
         "httpMethod": "POST",
-        "path": "orkestr/approval-requested",
+        "path": "axiomera/approval-requested",
         "responseMode": "onReceived",
         "options": {
           "rawBody": true
@@ -56,7 +56,7 @@
       "typeVersion": 2,
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "// Verify the HMAC signature of the incoming webhook (timestamp + '.' + raw body).\nconst crypto = require('crypto');\nconst item = $input.first();\nconst headers = item.json.headers || {};\nconst ts = headers['x-orkestr-timestamp'];\nconst sig = headers['x-orkestr-signature'];\nlet raw;\ntry { raw = await this.helpers.getBinaryDataBuffer(0, 'data'); }\ncatch (e) { raw = Buffer.from(JSON.stringify(item.json.body ?? {})); }\nconst secret = $env.ORKESTR_WEBHOOK_SECRET;\nconst now = Math.floor(Date.now() / 1000);\nlet valid = false; let reason = '';\nif (!ts || !sig) reason = 'missing signature headers';\nelse if (Math.abs(now - parseInt(ts, 10)) > 300) reason = 'timestamp outside tolerance';\nelse {\n  const expected = crypto.createHmac('sha256', secret).update(ts + '.').update(raw).digest('hex');\n  valid = expected.length === sig.length && crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(sig));\n  if (!valid) reason = 'signature mismatch';\n}\nlet body = item.json.body;\nif (!body || typeof body !== 'object' || Object.keys(body).length === 0) { try { body = JSON.parse(raw.toString('utf8')); } catch (e) { body = {}; } }\nreturn [{ json: { valid, reason, status: valid ? 200 : 401, payload: body,\n  correlation_id: body.correlation_id || headers['x-correlation-id'] || String($execution.id),\n  workspace_id: body.workspace_id || '' } }];"
+        "jsCode": "// Verify the HMAC signature of the incoming webhook (timestamp + '.' + raw body).\nconst crypto = require('crypto');\nconst item = $input.first();\nconst headers = item.json.headers || {};\n// X-Axiomera-* headers; the legacy X-Orkestr-* names from before the product rename are still accepted.\nconst ts = headers['x-axiomera-timestamp'] ?? headers['x-orkestr-timestamp'];\nconst sig = headers['x-axiomera-signature'] ?? headers['x-orkestr-signature'];\nlet raw;\ntry { raw = await this.helpers.getBinaryDataBuffer(0, 'data'); }\ncatch (e) { raw = Buffer.from(JSON.stringify(item.json.body ?? {})); }\nconst secret = $env.AXIOMERA_WEBHOOK_SECRET;\nconst now = Math.floor(Date.now() / 1000);\nlet valid = false; let reason = '';\nif (!ts || !sig) reason = 'missing signature headers';\nelse if (Math.abs(now - parseInt(ts, 10)) > 300) reason = 'timestamp outside tolerance';\nelse {\n  const expected = crypto.createHmac('sha256', secret).update(ts + '.').update(raw).digest('hex');\n  valid = expected.length === sig.length && crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(sig));\n  if (!valid) reason = 'signature mismatch';\n}\nlet body = item.json.body;\nif (!body || typeof body !== 'object' || Object.keys(body).length === 0) { try { body = JSON.parse(raw.toString('utf8')); } catch (e) { body = {}; } }\nreturn [{ json: { valid, reason, status: valid ? 200 : 401, payload: body,\n  correlation_id: body.correlation_id || headers['x-correlation-id'] || String($execution.id),\n  workspace_id: body.workspace_id || '' } }];"
       },
       "id": "c6046f31-ec76-5277-bc93-91ead6e910b9",
       "position": [
@@ -130,24 +130,24 @@
       "typeVersion": 4.2,
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/approvals/{{ $('Normalize Request').first().json.approval_id }}/register-wait",
+        "url": "={{ $env.AXIOMERA_API_URL }}/api/v1/approvals/{{ $('Normalize Request').first().json.approval_id }}/register-wait",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "X-Orkestr-Service-Token",
-              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+              "name": "X-Axiomera-Service-Token",
+              "value": "={{ $env.AXIOMERA_SERVICE_TOKEN }}"
             },
             {
               "name": "X-N8N-Execution-Id",
               "value": "={{ $execution.id }}"
             },
             {
-              "name": "X-Orkestr-Workflow",
+              "name": "X-Axiomera-Workflow",
               "value": "E"
             },
             {
-              "name": "X-Orkestr-Node",
+              "name": "X-Axiomera-Node",
               "value": "Send Notification"
             },
             {
@@ -233,7 +233,7 @@
       "typeVersion": 2,
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "// The decision callback is signed as HMAC(ts + '.' + approval_id + '.' + decision).\n// Authorisation itself is re-checked against the database by the next node.\nconst crypto = require('crypto');\nconst item = $input.first().json;\nconst h = item.headers || {};\nconst b = item.body || {};\nconst req = $('Normalize Request').first().json;\nif (!b.approval_id) return [{ json: { approval_id: req.approval_id, resumed_by: 'timeout' } }];\nconst expected = crypto.createHmac('sha256', $env.ORKESTR_WEBHOOK_SECRET).update(`${h['x-orkestr-timestamp']}.${b.approval_id}.${b.decision}`).digest('hex');\nconst ok = !!h['x-orkestr-signature'] && expected === h['x-orkestr-signature'] && b.approval_id === req.approval_id;\nif (!ok) throw new Error('Approval callback signature invalid');\nreturn [{ json: { approval_id: req.approval_id, decision: b.decision, resumed_by: 'decision' } }];"
+        "jsCode": "// The decision callback is signed as HMAC(ts + '.' + approval_id + '.' + decision).\n// Authorisation itself is re-checked against the database by the next node.\nconst crypto = require('crypto');\nconst item = $input.first().json;\nconst h = item.headers || {};\nconst b = item.body || {};\nconst req = $('Normalize Request').first().json;\nif (!b.approval_id) return [{ json: { approval_id: req.approval_id, resumed_by: 'timeout' } }];\nconst ts = h['x-axiomera-timestamp'] ?? h['x-orkestr-timestamp'];\nconst sig = h['x-axiomera-signature'] ?? h['x-orkestr-signature'];\nconst expected = crypto.createHmac('sha256', $env.AXIOMERA_WEBHOOK_SECRET).update(`${ts}.${b.approval_id}.${b.decision}`).digest('hex');\nconst ok = !!sig && expected === sig && b.approval_id === req.approval_id;\nif (!ok) throw new Error('Approval callback signature invalid');\nreturn [{ json: { approval_id: req.approval_id, decision: b.decision, resumed_by: 'decision' } }];"
       },
       "id": "c2aadce6-363b-5e0f-8f04-59798e9c51ec",
       "position": [
@@ -247,24 +247,24 @@
       "typeVersion": 4.2,
       "parameters": {
         "method": "GET",
-        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/approvals/{{ $('Normalize Request').first().json.approval_id }}/authorize",
+        "url": "={{ $env.AXIOMERA_API_URL }}/api/v1/approvals/{{ $('Normalize Request').first().json.approval_id }}/authorize",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "X-Orkestr-Service-Token",
-              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+              "name": "X-Axiomera-Service-Token",
+              "value": "={{ $env.AXIOMERA_SERVICE_TOKEN }}"
             },
             {
               "name": "X-N8N-Execution-Id",
               "value": "={{ $execution.id }}"
             },
             {
-              "name": "X-Orkestr-Workflow",
+              "name": "X-Axiomera-Workflow",
               "value": "E"
             },
             {
-              "name": "X-Orkestr-Node",
+              "name": "X-Axiomera-Node",
               "value": "Verify Identity and Scope"
             },
             {
@@ -325,24 +325,24 @@
       "typeVersion": 4.2,
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/approvals/{{ $('Normalize Request').first().json.approval_id }}/execute",
+        "url": "={{ $env.AXIOMERA_API_URL }}/api/v1/approvals/{{ $('Normalize Request').first().json.approval_id }}/execute",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "X-Orkestr-Service-Token",
-              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+              "name": "X-Axiomera-Service-Token",
+              "value": "={{ $env.AXIOMERA_SERVICE_TOKEN }}"
             },
             {
               "name": "X-N8N-Execution-Id",
               "value": "={{ $execution.id }}"
             },
             {
-              "name": "X-Orkestr-Workflow",
+              "name": "X-Axiomera-Workflow",
               "value": "E"
             },
             {
-              "name": "X-Orkestr-Node",
+              "name": "X-Axiomera-Node",
               "value": "Execute Approved Action"
             },
             {
@@ -372,24 +372,24 @@
       "typeVersion": 4.2,
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/notifications",
+        "url": "={{ $env.AXIOMERA_API_URL }}/api/v1/notifications",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "X-Orkestr-Service-Token",
-              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+              "name": "X-Axiomera-Service-Token",
+              "value": "={{ $env.AXIOMERA_SERVICE_TOKEN }}"
             },
             {
               "name": "X-N8N-Execution-Id",
               "value": "={{ $execution.id }}"
             },
             {
-              "name": "X-Orkestr-Workflow",
+              "name": "X-Axiomera-Workflow",
               "value": "E"
             },
             {
-              "name": "X-Orkestr-Node",
+              "name": "X-Axiomera-Node",
               "value": "Notify Outcome"
             },
             {
@@ -421,24 +421,24 @@
       "typeVersion": 4.2,
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/approvals/{{ $('Normalize Request').first().json.approval_id }}/outcome",
+        "url": "={{ $env.AXIOMERA_API_URL }}/api/v1/approvals/{{ $('Normalize Request').first().json.approval_id }}/outcome",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "X-Orkestr-Service-Token",
-              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+              "name": "X-Axiomera-Service-Token",
+              "value": "={{ $env.AXIOMERA_SERVICE_TOKEN }}"
             },
             {
               "name": "X-N8N-Execution-Id",
               "value": "={{ $execution.id }}"
             },
             {
-              "name": "X-Orkestr-Workflow",
+              "name": "X-Axiomera-Workflow",
               "value": "E"
             },
             {
-              "name": "X-Orkestr-Node",
+              "name": "X-Axiomera-Node",
               "value": "Record Outcome"
             },
             {
@@ -469,24 +469,24 @@
       "typeVersion": 4.2,
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.ORKESTR_API_URL }}/api/v1/approvals/{{ $('Normalize Request').first().json.approval_id }}/outcome",
+        "url": "={{ $env.AXIOMERA_API_URL }}/api/v1/approvals/{{ $('Normalize Request').first().json.approval_id }}/outcome",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "X-Orkestr-Service-Token",
-              "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"
+              "name": "X-Axiomera-Service-Token",
+              "value": "={{ $env.AXIOMERA_SERVICE_TOKEN }}"
             },
             {
               "name": "X-N8N-Execution-Id",
               "value": "={{ $execution.id }}"
             },
             {
-              "name": "X-Orkestr-Workflow",
+              "name": "X-Axiomera-Workflow",
               "value": "E"
             },
             {
-              "name": "X-Orkestr-Node",
+              "name": "X-Axiomera-Node",
               "value": "Record Rejection"
             },
             {
@@ -688,7 +688,7 @@
     "errorWorkflow": "OrkZ0ErrorHandler"
   },
   "pinData": {},
-  "versionId": "d093488f-4dc6-545a-bedd-1a9d32df9f89",
+  "versionId": "6008d39c-3694-503e-9237-cc6823540c52",
   "meta": {
     "templateCredsSetupCompleted": true
   },

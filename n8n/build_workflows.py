@@ -14,18 +14,19 @@ from pathlib import Path
 OUT = Path(__file__).parent / "workflows"
 NS = uuid.UUID("6f1c3d1e-6a8b-4e5a-9c2e-0b7f0a0d4e11")
 IDS = {"A": "OrkA0CustomerIntk", "B": "OrkB0IncidentEscl", "C": "OrkC0RfpProcessng", "D": "OrkD0DeadlineMntr", "E": "OrkE0ApprovalAudt", "Z": "OrkZ0ErrorHandler"}
-API = "={{ $env.ORKESTR_API_URL }}/api/v1"
+API = "={{ $env.AXIOMERA_API_URL }}/api/v1"
 
 VERIFY_JS = r"""// Verify the HMAC signature of the incoming webhook (timestamp + '.' + raw body).
 const crypto = require('crypto');
 const item = $input.first();
 const headers = item.json.headers || {};
-const ts = headers['x-orkestr-timestamp'];
-const sig = headers['x-orkestr-signature'];
+// X-Axiomera-* headers; the legacy X-Orkestr-* names from before the product rename are still accepted.
+const ts = headers['x-axiomera-timestamp'] ?? headers['x-orkestr-timestamp'];
+const sig = headers['x-axiomera-signature'] ?? headers['x-orkestr-signature'];
 let raw;
 try { raw = await this.helpers.getBinaryDataBuffer(0, 'data'); }
 catch (e) { raw = Buffer.from(JSON.stringify(item.json.body ?? {})); }
-const secret = $env.ORKESTR_WEBHOOK_SECRET;
+const secret = $env.AXIOMERA_WEBHOOK_SECRET;
 const now = Math.floor(Date.now() / 1000);
 let valid = false; let reason = '';
 if (!ts || !sig) reason = 'missing signature headers';
@@ -61,8 +62,10 @@ const h = item.headers || {};
 const b = item.body || {};
 const req = $('Normalize Request').first().json;
 if (!b.approval_id) return [{ json: { approval_id: req.approval_id, resumed_by: 'timeout' } }];
-const expected = crypto.createHmac('sha256', $env.ORKESTR_WEBHOOK_SECRET).update(`${h['x-orkestr-timestamp']}.${b.approval_id}.${b.decision}`).digest('hex');
-const ok = !!h['x-orkestr-signature'] && expected === h['x-orkestr-signature'] && b.approval_id === req.approval_id;
+const ts = h['x-axiomera-timestamp'] ?? h['x-orkestr-timestamp'];
+const sig = h['x-axiomera-signature'] ?? h['x-orkestr-signature'];
+const expected = crypto.createHmac('sha256', $env.AXIOMERA_WEBHOOK_SECRET).update(`${ts}.${b.approval_id}.${b.decision}`).digest('hex');
+const ok = !!sig && expected === sig && b.approval_id === req.approval_id;
 if (!ok) throw new Error('Approval callback signature invalid');
 return [{ json: { approval_id: req.approval_id, decision: b.decision, resumed_by: 'decision' } }];"""
 
@@ -110,9 +113,9 @@ class WF:
 
 
 def headers(wf: str, node: str, corr: str | None) -> list[dict]:
-    h = [{"name": "X-Orkestr-Service-Token", "value": "={{ $env.ORKESTR_SERVICE_TOKEN }}"},
+    h = [{"name": "X-Axiomera-Service-Token", "value": "={{ $env.AXIOMERA_SERVICE_TOKEN }}"},
          {"name": "X-N8N-Execution-Id", "value": "={{ $execution.id }}"},
-         {"name": "X-Orkestr-Workflow", "value": wf}, {"name": "X-Orkestr-Node", "value": node}]
+         {"name": "X-Axiomera-Workflow", "value": wf}, {"name": "X-Axiomera-Node", "value": node}]
     if corr:
         h.append({"name": "X-Correlation-Id", "value": corr})
     return h
@@ -182,9 +185,9 @@ def workflow_a() -> WF:
     w = WF("A", "Customer Request Intake", "Email/Webhook → Validate → Deduplicate → Create Case → Classify → Retrieve Evidence → Propose Resolution → Approval → Execute → Verify → Notify")
     C = "={{ $('Verify Signature').first().json.correlation_id }}"
     CASE = "$('Create Case').first().json.case_id"
-    sticky(w, "## Workflow A — Customer Request Intake\nSigned email/portal/webhook events become cases. The Orkestr API is the source of truth; "
+    sticky(w, "## Workflow A — Customer Request Intake\nSigned email/portal/webhook events become cases. The Axiomera API is the source of truth; "
               "this workflow sequences the stages, retries transient failures and hands consequential actions to Workflow E for human approval.", 0, -260, 620)
-    w.add(webhook("A", "Intake Webhook", "orkestr/intake"), 0, 0)
+    w.add(webhook("A", "Intake Webhook", "axiomera/intake"), 0, 0)
     w.add(code("Verify Signature", VERIFY_JS), 220, 0)
     w.add(code("Validate Payload", VALIDATE_EMAIL_JS), 440, 0)
     w.add(if_true("Is Valid?", "={{ $json.valid }}"), 660, 0)
@@ -240,10 +243,10 @@ def workflow_e() -> WF:
     w = WF("E", "Approval & Audit", "Approval Request → Send Notification → Wait for Authorized Decision → Verify Identity and Scope → Execute or Reject → Record Outcome")
     C = "={{ $('Normalize Request').first().json.correlation_id }}"
     A = "$('Normalize Request').first().json.approval_id"
-    sticky(w, "## Workflow E — Approval & Audit\nWaits (up to 72h) for a human decision recorded in Orkestr. On resume it re-verifies the decider's identity, role "
+    sticky(w, "## Workflow E — Approval & Audit\nWaits (up to 72h) for a human decision recorded in Axiomera. On resume it re-verifies the decider's identity, role "
               "and the scope hash against the database before executing. Every step is written to the hash-chained audit log.", 0, -300, 640)
     w.add({"name": "From Workflow A", "type": "n8n-nodes-base.executeWorkflowTrigger", "typeVersion": 1.1, "parameters": {"inputSource": "passthrough"}}, 0, -60)
-    w.add(webhook("E", "Approval Webhook", "orkestr/approval-requested", respond="onReceived"), 0, 160)
+    w.add(webhook("E", "Approval Webhook", "axiomera/approval-requested", respond="onReceived"), 0, 160)
     w.add(code("Verify Signature", VERIFY_JS), 220, 160)
     w.add(if_true("Signature Valid?", "={{ $json.valid }}"), 440, 160)
     w.add({"name": "Stop: Invalid Signature", "type": "n8n-nodes-base.stopAndError", "typeVersion": 1, "parameters": {"errorMessage": "Invalid webhook signature"}}, 660, 320)
@@ -285,8 +288,8 @@ def workflow_b() -> WF:
     C = "={{ $('Verify Signature').first().json.correlation_id }}"
     CASE = "$('Categorize').first().json.case_id"
     sticky(w, "## Workflow B — Incident Escalation\nTop: event-driven incident handling. Bottom: SLA monitor every 10 minutes escalates breaches and closes "
-              "resolved incidents. Jira/Slack calls go through Orkestr connectors (live or clearly-labelled simulators).", 0, -300, 640)
-    w.add(webhook("B", "Incident Webhook", "orkestr/incident"), 0, 0)
+              "resolved incidents. Jira/Slack calls go through Axiomera connectors (live or clearly-labelled simulators).", 0, -300, 640)
+    w.add(webhook("B", "Incident Webhook", "axiomera/incident"), 0, 0)
     w.add(code("Verify Signature", VERIFY_JS), 220, 0)
     w.add(if_true("Signature Valid?", "={{ $json.valid }}"), 440, 0)
     w.add(respond("Reject", "={{ JSON.stringify({ accepted: false, reason: $json.reason }) }}", 401), 660, 200)
@@ -335,9 +338,9 @@ def workflow_c() -> WF:
     C = "={{ $('Verify Signature').first().json.correlation_id }}"
     R = "$('Verify Signature').first().json.payload.rfp_id"
     P = "$('Generate Draft').first().json.proposal_id"
-    sticky(w, "## Workflow C — RFP Processing\nTriggered by Orkestr when a tender document is uploaded (or by an email-attachment bridge). "
+    sticky(w, "## Workflow C — RFP Processing\nTriggered by Axiomera when a tender document is uploaded (or by an email-attachment bridge). "
               "Every stage is an idempotent API call; the draft is exported only as a watermarked DRAFT until a human approves it.", 0, -300, 640)
-    w.add(webhook("C", "Document Arrival", "orkestr/rfp-arrived"), 0, 0)
+    w.add(webhook("C", "Document Arrival", "axiomera/rfp-arrived"), 0, 0)
     w.add(code("Verify Signature", VERIFY_JS), 220, 0)
     w.add(if_true("Signature Valid?", "={{ $json.valid && !!$json.payload.rfp_id }}"), 440, 0)
     w.add(respond("Reject", "={{ JSON.stringify({ accepted: false, reason: $json.reason || 'rfp_id missing' }) }}", 401), 660, 200)
@@ -365,10 +368,10 @@ def workflow_c() -> WF:
 # =========================================================================== D
 def workflow_d() -> WF:
     w = WF("D", "Proposal Deadline Monitoring", "Scheduled Trigger → Query Active RFPs → Calculate Deadlines → Identify At-Risk Items → Notify Owners → Escalate")
-    sticky(w, "## Workflow D — Deadline Monitoring\nHourly (and on demand via signed webhook). Orkestr computes hours left and open mandatory requirements; "
+    sticky(w, "## Workflow D — Deadline Monitoring\nHourly (and on demand via signed webhook). Axiomera computes hours left and open mandatory requirements; "
               "owners are notified for anything due within 72h and escalations go to #bids inside 24h (rate-limited to once per 6h).", 0, -300, 640)
     w.add(schedule("Hourly Schedule", 60), 0, 0)
-    w.add(webhook("D", "Manual Scan Webhook", "orkestr/deadline-scan", respond="onReceived"), 0, 200)
+    w.add(webhook("D", "Manual Scan Webhook", "axiomera/deadline-scan", respond="onReceived"), 0, 200)
     w.add(code("Verify Signature", VERIFY_JS), 220, 200)
     w.add(if_true("Signature Valid?", "={{ $json.valid }}"), 440, 200)
     w.add(http("D", "Query Active RFPs", "GET", "/rfps/deadlines/at-risk?horizon_hours=72"), 660, 0)
@@ -390,7 +393,7 @@ def workflow_d() -> WF:
 
 # =========================================================================== Z
 def workflow_z() -> WF:
-    w = WF("Z", "Error Handler (dead-letter)", "Any failed execution → dead letter in Orkestr → critical notification")
+    w = WF("Z", "Error Handler (dead-letter)", "Any failed execution → dead letter in Axiomera → critical notification")
     w.add({"name": "Error Trigger", "type": "n8n-nodes-base.errorTrigger", "typeVersion": 1, "parameters": {}}, 0, 0)
     w.add(http("Z", "Report Dead Letter", "POST", "/workflow-events/error", retries=5, wait_ms=5000,
                body="={{ JSON.stringify({ workflow_name: $json.workflow.name, workflow_id: $json.workflow.id, execution_id: String($json.execution.id ?? ''), last_node: $json.execution.lastNodeExecuted, error: ($json.execution.error && $json.execution.error.message) || 'unknown error', payload: { mode: $json.execution.mode } }) }}"), 220, 0)
