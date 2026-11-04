@@ -6,7 +6,7 @@ Fusion: Reciprocal Rank Fusion (k=60).
 
 The default embedder is a deterministic feature-hashing embedder (word unigrams + bigrams +
 character trigrams). It needs no model download, which keeps the stack usable on an 8 GB
-laptop; set ORKESTR_EMBEDDING_PROVIDER=openai to use a hosted embedding model instead.
+laptop; set AXIOMERA_EMBEDDING_PROVIDER=openai to use a hosted embedding model instead.
 """
 from __future__ import annotations
 

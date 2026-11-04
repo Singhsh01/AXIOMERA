@@ -19,6 +19,7 @@ from sqlalchemy.orm.attributes import flag_modified
 
 from app.agents.runtime import TOOLS
 from app.config import get_settings
+from app.core.naming import signature_headers
 from app.core.cache import cached, invalidate
 from app.core.security import sign_payload
 from app.db import get_db, new_id, session_factory, utcnow
@@ -101,8 +102,7 @@ def _resume_or_fallback(approval_id: str) -> None:
             ts = str(int(time.time()))
             sig = hmac.new(s.webhook_secret.encode(), f"{ts}.{a.id}.{a.status}".encode(), hashlib.sha256).hexdigest()
             try:
-                r = httpx.post(url, content=body, timeout=10, headers={"Content-Type": "application/json", "X-Orkestr-Timestamp": ts,
-                                                                        "X-Orkestr-Signature": sig, "X-Correlation-Id": a.correlation_id or ""})
+                r = httpx.post(url, content=body, timeout=10, headers={"Content-Type": "application/json", **signature_headers(ts, sig), "X-Correlation-Id": a.correlation_id or ""})
                 if r.status_code < 400:
                     return
                 log.warning("n8n resume failed %s: %s", r.status_code, r.text[:200])
@@ -539,7 +539,7 @@ def _ensure_connections(db: Session, workspace_id: str) -> list[IntegrationConne
     for kind, name in connectors.KINDS.items():
         if kind not in have:
             c = IntegrationConnection(workspace_id=workspace_id, kind=kind, mode="simulator", display_name=name, status="unknown",
-                                      secret_ref={"slack": "ORKESTR_SLACK_WEBHOOK_URL", "jira": "ORKESTR_JIRA_API_TOKEN", "crm": "ORKESTR_HUBSPOT_TOKEN"}.get(kind))
+                                      secret_ref={"slack": "AXIOMERA_SLACK_WEBHOOK_URL", "jira": "AXIOMERA_JIRA_API_TOKEN", "crm": "AXIOMERA_HUBSPOT_TOKEN"}.get(kind))
             db.add(c)
             have[kind] = c
     db.flush()

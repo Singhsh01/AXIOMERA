@@ -1,6 +1,6 @@
 """Shared cache and rate limiting.
 
-With ORKESTR_REDIS_URL set (as in Docker Compose), both are backed by Redis so every API worker
+With AXIOMERA_REDIS_URL set (as in Docker Compose), both are backed by Redis so every API worker
 and replica shares the same counters and cached responses. Without it they fall back to
 per-process memory, which is correct for a single worker (local development, tests).
 """

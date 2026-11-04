@@ -12,16 +12,16 @@ from prometheus_client import CollectorRegistry, Counter, Histogram
 correlation_id_var: ContextVar[str | None] = ContextVar("correlation_id", default=None)
 
 REGISTRY = CollectorRegistry(auto_describe=True)
-HTTP_REQUESTS = Counter("orkestr_http_requests_total", "HTTP requests", ["method", "route", "status"], registry=REGISTRY)
-HTTP_LATENCY = Histogram("orkestr_http_request_seconds", "HTTP latency", ["route"], registry=REGISTRY)
-WORKFLOW_STEPS = Counter("orkestr_workflow_steps_total", "Workflow steps reported", ["workflow", "status"], registry=REGISTRY)
-AGENT_RUNS = Counter("orkestr_agent_runs_total", "Agent runs", ["agent", "status"], registry=REGISTRY)
-AGENT_LATENCY = Histogram("orkestr_agent_run_seconds", "Agent run latency", ["agent"], registry=REGISTRY)
-LLM_TOKENS = Counter("orkestr_llm_tokens_total", "LLM tokens", ["provider", "direction"], registry=REGISTRY)
-TOOL_CALLS = Counter("orkestr_tool_calls_total", "Tool calls", ["tool", "status"], registry=REGISTRY)
-APPROVALS = Counter("orkestr_approvals_total", "Approval decisions", ["action_type", "decision"], registry=REGISTRY)
-DUPLICATES = Counter("orkestr_duplicate_events_total", "Duplicate inbound events suppressed", ["source"], registry=REGISTRY)
-INTEGRATION_CALLS = Counter("orkestr_integration_calls_total", "Integration calls", ["connector", "mode", "status"], registry=REGISTRY)
+HTTP_REQUESTS = Counter("axiomera_http_requests_total", "HTTP requests", ["method", "route", "status"], registry=REGISTRY)
+HTTP_LATENCY = Histogram("axiomera_http_request_seconds", "HTTP latency", ["route"], registry=REGISTRY)
+WORKFLOW_STEPS = Counter("axiomera_workflow_steps_total", "Workflow steps reported", ["workflow", "status"], registry=REGISTRY)
+AGENT_RUNS = Counter("axiomera_agent_runs_total", "Agent runs", ["agent", "status"], registry=REGISTRY)
+AGENT_LATENCY = Histogram("axiomera_agent_run_seconds", "Agent run latency", ["agent"], registry=REGISTRY)
+LLM_TOKENS = Counter("axiomera_llm_tokens_total", "LLM tokens", ["provider", "direction"], registry=REGISTRY)
+TOOL_CALLS = Counter("axiomera_tool_calls_total", "Tool calls", ["tool", "status"], registry=REGISTRY)
+APPROVALS = Counter("axiomera_approvals_total", "Approval decisions", ["action_type", "decision"], registry=REGISTRY)
+DUPLICATES = Counter("axiomera_duplicate_events_total", "Duplicate inbound events suppressed", ["source"], registry=REGISTRY)
+INTEGRATION_CALLS = Counter("axiomera_integration_calls_total", "Integration calls", ["connector", "mode", "status"], registry=REGISTRY)
 
 
 class JsonFormatter(logging.Formatter):
@@ -63,7 +63,7 @@ def setup_tracing(app, endpoint: str | None) -> bool:
         from opentelemetry.sdk.trace.export import BatchSpanProcessor
     except ImportError:  # pragma: no cover
         return False
-    provider = TracerProvider(resource=Resource.create({"service.name": "orkestr-api"}))
+    provider = TracerProvider(resource=Resource.create({"service.name": "axiomera-api"}))
     if endpoint:
         try:
             from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
@@ -80,6 +80,6 @@ def tracer():
     try:
         from opentelemetry import trace
 
-        return trace.get_tracer("orkestr")
+        return trace.get_tracer("axiomera")
     except ImportError:  # pragma: no cover
         return None

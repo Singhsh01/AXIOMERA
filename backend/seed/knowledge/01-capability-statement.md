@@ -1,6 +1,6 @@
 ---
 title: Capability Statement — Helix Ridge Software GmbH
-note: Helix Ridge is a fictional company created for the Orkestr demo
+note: Helix Ridge is a fictional company created for the Axiomera demo
 kind: capability
 ---
 # Company overview

@@ -141,7 +141,7 @@ class JiraLive(Connector):
 
     def execute(self, operation, payload, idempotency_key=None):
         body = {"fields": {"project": {"key": self.project}, "summary": payload["summary"][:250], "issuetype": {"name": payload.get("issue_type", "Task")},
-                           "labels": ["orkestr"] + ([f"orkestr-{idempotency_key[:20]}"] if idempotency_key else []),
+                           "labels": ["axiomera"] + ([f"axiomera-{idempotency_key[:20]}"] if idempotency_key else []),
                            "description": {"type": "doc", "version": 1, "content": [{"type": "paragraph", "content": [{"type": "text", "text": payload.get("description", "")[:3000]}]}]}}}
         r = httpx.post(f"{self.base}/rest/api/3/issue", json=body, auth=self.auth, timeout=15)
         if r.status_code >= 500 or r.status_code == 429:

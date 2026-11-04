@@ -21,6 +21,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
+from app.core.naming import signature_headers
 from app.core.observability import WORKFLOW_STEPS
 from app.core.security import sign_payload
 from app.db import new_id, utcnow
@@ -29,11 +30,11 @@ from app.models import AgentRun, WorkflowRun, WorkflowStep
 log = logging.getLogger(__name__)
 
 CATALOG: dict[str, dict[str, Any]] = {
-    "A": {"file": "A-customer-request-intake.json", "path": "orkestr/intake", "name": "Customer Request Intake", "domain": "operations"},
-    "B": {"file": "B-incident-escalation.json", "path": "orkestr/incident", "name": "Enterprise Incident Escalation", "domain": "operations"},
-    "C": {"file": "C-rfp-processing.json", "path": "orkestr/rfp-arrived", "name": "RFP Processing", "domain": "proposals"},
-    "D": {"file": "D-proposal-deadline-monitoring.json", "path": "orkestr/deadline-scan", "name": "Proposal Deadline Monitoring", "domain": "proposals"},
-    "E": {"file": "E-approval-and-audit.json", "path": "orkestr/approval-requested", "name": "Approval & Audit", "domain": "platform"},
+    "A": {"file": "A-customer-request-intake.json", "path": "axiomera/intake", "name": "Customer Request Intake", "domain": "operations"},
+    "B": {"file": "B-incident-escalation.json", "path": "axiomera/incident", "name": "Enterprise Incident Escalation", "domain": "operations"},
+    "C": {"file": "C-rfp-processing.json", "path": "axiomera/rfp-arrived", "name": "RFP Processing", "domain": "proposals"},
+    "D": {"file": "D-proposal-deadline-monitoring.json", "path": "axiomera/deadline-scan", "name": "Proposal Deadline Monitoring", "domain": "proposals"},
+    "E": {"file": "E-approval-and-audit.json", "path": "axiomera/approval-requested", "name": "Approval & Audit", "domain": "platform"},
     "Z": {"file": "Z-error-handler.json", "path": None, "name": "Error Handler (dead-letter)", "domain": "platform"},
 }
 
@@ -84,7 +85,7 @@ def trigger(key: str, payload: dict[str, Any], *, correlation_id: str) -> dict[s
     try:
         r = httpx.post(
             f"{s.n8n_base_url}/webhook/{path}", content=body, timeout=15,
-            headers={"Content-Type": "application/json", "X-Orkestr-Timestamp": ts, "X-Orkestr-Signature": sig,
+            headers={"Content-Type": "application/json", **signature_headers(ts, sig),
                      "X-Correlation-Id": correlation_id},
         )
     except httpx.HTTPError as exc:

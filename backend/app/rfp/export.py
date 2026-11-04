@@ -94,7 +94,7 @@ def to_docx(ctx: dict[str, Any]) -> bytes:
     cp.title = f"Proposal — {rfp['title']}"
     cp.subject = rfp.get("reference") or ""
     cp.author = company
-    cp.keywords = f"orkestr; proposal; v{p['version']}; {'final' if final else 'draft'}"
+    cp.keywords = f"axiomera; proposal; v{p['version']}; {'final' if final else 'draft'}"
     cp.comments = f"Review status: {p['status']}. Evidence manifest sha256: {ctx['manifest_sha']}"
 
     # Cover
@@ -184,7 +184,7 @@ class _ProposalDoc(BaseDocTemplate):
     def __init__(self, buf, ctx):
         super().__init__(buf, pagesize=A4, leftMargin=20 * mm, rightMargin=20 * mm, topMargin=22 * mm, bottomMargin=20 * mm,
                          title=f"Proposal — {ctx['rfp']['title']}", author=ctx["company"], subject=ctx["rfp"].get("reference") or "",
-                         keywords=f"orkestr proposal v{ctx['proposal']['version']}")
+                         keywords=f"axiomera proposal v{ctx['proposal']['version']}")
         self.ctx = ctx
         frame = Frame(self.leftMargin, self.bottomMargin, self.width, self.height, id="f")
         self.addPageTemplates([PageTemplate("cover", [frame]), PageTemplate("body", [frame], onPage=self._decorate)])
